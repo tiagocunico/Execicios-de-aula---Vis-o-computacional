@@ -1,0 +1,5 @@
+
+Na letra A e B, vimos a diferença entre o processamento de imagens em 8b ou em double, quando não utilizamos o double, acabamos perdendo informação.
+Na letra C, conseguimos isolar a movimentação que houve entre as imagens
+Na letra D, não houve grandes ganhos em usar uma normalização
+Na letra E, aplicamos um threshold para isolar a movimentação
