@@ -64,9 +64,9 @@ end
 mascara_media_5x5 = ones(5, 5) / 25;
 
 % Exemplo de Uso 2: Máscara de Borda (Laplaciano)
-mascara_bordas = [ 0 -1  0;
-                  -1  5 -1;
-                   0 -1  0 ];
+mascara_bordas = [ 1 2 1;
+                   2 4 2;
+                   1 2 1 ]/16;
 
 % Chamamos a super função Genérica!
 im_processada_1 = convolucao(im_in, mascara_media_5x5);
