@@ -20,10 +20,6 @@ im_replicacao = zeros(linhas, colunas, 'uint8');
 for i = 1:linhas
     for j = 1:colunas
         
-        % Sua missão: Quando você estiver nas bordas (ex: i=1 ou j=1), o MATLAB
-        % não deixa você pedir o pixel im_in(i-1, j) pois o índice 0 não existe!
-        % Crie os lógicos (if/else) para contornar isso nas 4 situações abaixo:
-        
         % -------------------------------------------------------------
         % 1. Condição de Dirichlet (Zero Padding)
         % Se o pixel pedido sair da imagem, você deve considerar o valor dele como 0.

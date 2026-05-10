@@ -1,49 +1,6 @@
 % ==========================================================
 % SCRIPT PRINCIPAL - EXERCÍCIO 7
 % ==========================================================
-1; % Comando dummy para Octave
-
-function im_out = convolucao(im_in, mascara)
-    [linhas_img, colunas_img] = size(im_in);
-    im_out = zeros(linhas_img, colunas_img, 'uint8');
-    
-    [linhas_mask, colunas_mask] = size(mascara);
-    raio_y = floor(linhas_mask / 2);
-    raio_x = floor(colunas_mask / 2);
-    
-    for i = 1:linhas_img
-        for j = 1:colunas_img
-            soma = 0;
-            for m = 1:linhas_mask
-                for n = 1:colunas_mask
-                    linha_atual = i + (m - 1) - raio_y;
-                    coluna_atual = j + (n - 1) - raio_x;
-                    
-                    if linha_atual >= 1 && linha_atual <= linhas_img && ...
-                       coluna_atual >= 1 && coluna_atual <= colunas_img
-                        pixel_imagem = double(im_in(linha_atual, coluna_atual));
-                        peso_filtro = double(mascara(m, n));
-                        soma = soma + (pixel_imagem * peso_filtro);
-                    end
-                end
-            end
-            
-            % O GRANDE SEGREDO DAS BORDAS BRILHANTES!
-            % O comando 'abs' (valor absoluto) faz com que os números negativos
-            % (que indicam bordas escuras) se tornem positivos.
-            % Isso faz com que a borda fique branca, não importa se o filtro
-            % detectou a transição de escura para clara ou de clara para escura!
-            soma = abs(soma);
-
-            if soma > 255; soma = 255; end
-            %if soma < 0; soma = 0; end
-
-            im_out(i, j) = uint8(soma);
-        end
-    end
-end
-
-% ==========================================================
 clear; clc;
 
 im_in = imread('Lista 3/Imagens/parafuso.JPG');
