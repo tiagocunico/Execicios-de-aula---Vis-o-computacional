@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Animação — Dilatação Morfológica</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 24px 16px; color: #1a1a2e; }
+    h1 { text-align: center; font-size: 1.4rem; margin-bottom: 4px; }
+    .subtitle { text-align: center; color: #666; font-size: 0.85rem; margin-bottom: 24px; }
+
+    .layout { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+
+    .panel {
+      background: #fff;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      flex: 1;
+      min-width: 180px;
+      max-width: 260px;
+    }
+
+    .panel h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.07em; color: #888; margin-bottom: 12px; }
+    .panel p.desc { font-size: 0.78rem; color: #555; margin-top: 8px; min-height: 36px; line-height: 1.4; }
+
+    .grid { display: inline-grid; gap: 3px; }
+
+    .cell {
+      width: 40px; height: 40px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1rem;
+      transition: background 0.3s, color 0.3s, transform 0.2s;
+    }
+
+    .cell-0       { background: #e8eaf6; color: #9fa8da; }
+    .cell-1       { background: #3949ab; color: #fff; }
+    .cell-hi      { background: #f59e0b; color: #fff; transform: scale(1.08); }   /* recorte ativo */
+    .cell-new     { background: #10b981; color: #fff; transform: scale(1.08); }   /* pixel que acabou de virar 1 */
+    .cell-se-on   { background: #6c63ff; color: #fff; }
+    .cell-se-cur  { background: #e11d48; color: #fff; transform: scale(1.15); }  /* posição atual no SE */
+    .cell-se-off  { background: #e2e8f0; color: #94a3b8; }
+
+    .step-info {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .step-info strong { color: #6c63ff; }
+    .step-info code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: 0.85rem; }
+
+    .controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+    button {
+      padding: 10px 22px; border: none; border-radius: 8px;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.15s;
+    }
+    #btnPrev { background: #e2e8f0; color: #475569; }
+    #btnPrev:hover { background: #cbd5e1; }
+    #btnNext { background: #6c63ff; color: #fff; }
+    #btnNext:hover { background: #574fd6; }
+    #btnPlay { background: #10b981; color: #fff; }
+    #btnPlay:hover { background: #059669; }
+    #btnReset { background: #f1f5f9; color: #64748b; }
+    #btnReset:hover { background: #e2e8f0; }
+
+    .progress { text-align: center; font-size: 0.8rem; color: #888; margin-bottom: 16px; }
+    .progress span { font-weight: 700; color: #6c63ff; }
+
+    .legend { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+    .leg { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #555; }
+    .leg-box { width: 16px; height: 16px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<h1 id="mainTitle">Animação — Dilatação Morfológica</h1>
+<p class="subtitle">Imagem 4×4 · Elemento Estruturante 3×3 (todo 1s) · Passo a passo</p>
+
+<div style="display:flex;justify-content:center;margin-bottom:20px;gap:0">
+  <button id="btnDil" onclick="setMode('dilation')"
+    style="padding:10px 28px;border:none;border-radius:8px 0 0 8px;font-size:0.9rem;font-weight:700;cursor:pointer;background:#3949ab;color:#fff">
+    Dilatação (OR)
+  </button>
+  <button id="btnEro" onclick="setMode('erosion')"
+    style="padding:10px 28px;border:none;border-radius:0 8px 8px 0;font-size:0.9rem;font-weight:700;cursor:pointer;background:#e2e8f0;color:#475569">
+    Erosão (AND)
+  </button>
+</div>
+
+<div class="legend">
+  <div class="leg"><div class="leg-box" style="background:#e8eaf6"></div> Pixel 0</div>
+  <div class="leg"><div class="leg-box" style="background:#3949ab"></div> Pixel 1</div>
+  <div class="leg"><div class="leg-box" style="background:#f59e0b"></div> Recorte ativo no padding</div>
+  <div class="leg"><div class="leg-box" style="background:#10b981"></div> Pixel que virou 1 agora</div>
+  <div class="leg"><div class="leg-box" style="background:#e11d48"></div> Posição atual no SE</div>
+</div>
+
+<div class="controls">
+  <button id="btnReset" onclick="reset()">↺ Reiniciar</button>
+  <button id="btnPrev"  onclick="prev()">← Anterior</button>
+  <button id="btnNext"  onclick="next()">Próximo →</button>
+  <button id="btnPlay"  onclick="togglePlay()">▶ Auto</button>
+</div>
+
+<div class="progress">Passo <span id="stepNum">0</span> de <span id="stepTotal"></span></div>
+
+<div class="step-info" id="stepInfo">Clique em <strong>Próximo</strong> para começar.</div>
+
+<div class="layout">
+  <div class="panel">
+    <h2>Imagem com Padding (6×6)</h2>
+    <div class="grid" id="gridPadded" style="grid-template-columns: repeat(6, 40px)"></div>
+    <p class="desc" id="descPadded">A imagem original com borda de zeros ao redor.</p>
+  </div>
+
+  <div class="panel">
+    <h2>sub_img — Recorte Deslocado (4×4)</h2>
+    <div class="grid" id="gridSub" style="grid-template-columns: repeat(4, 40px)"></div>
+    <p class="desc" id="descSub">O recorte extraído do padding para esta iteração.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Elemento Estruturante (3×3)</h2>
+    <div class="grid" id="gridSE" style="grid-template-columns: repeat(3, 40px)"></div>
+    <p class="desc" id="descSE">Posição atual destacada em vermelho.</p>
+  </div>
+
+  <div class="panel">
+    <h2>img_out — Resultado Acumulado (4×4)</h2>
+    <div class="grid" id="gridOut" style="grid-template-columns: repeat(4, 40px)"></div>
+    <p class="desc" id="descOut">OR acumulado de todos os recortes até agora.</p>
+  </div>
+</div>
+
+<script>
+const ROWS = 4, COLS = 4, PAD = 1;
+const PR = ROWS + 2*PAD, PC = COLS + 2*PAD;
+const M = 3, N = 3;
+const CR = Math.floor((M+1)/2) - 1;
+const CC = Math.floor((N+1)/2) - 1;
+const SE = [[1,1,1],[1,1,1],[1,1,1]];
+
+const IMG = [
+  [0,0,0,0],
+  [0,1,1,0],
+  [0,1,1,0],
+  [0,0,0,0]
+];
+
+let mode = 'dilation'; // 'dilation' | 'erosion'
+let steps = [];
+let current = 0;
+let playing = false;
+let timer = null;
+
+function dirLabel(dr, dc){
+  const v = dr < 0 ? '↑ cima' : dr > 0 ? '↓ baixo' : '';
+  const h = dc < 0 ? '← esquerda' : dc > 0 ? '→ direita' : '';
+  if(!v && !h) return '• centro (sem deslocamento)';
+  return [v,h].filter(Boolean).join(' + ');
+}
+
+function buildSteps(){
+  const isDil = mode === 'dilation';
+  const padVal = isDil ? 0 : 1;          // padding neutro
+  const initVal = isDil ? 0 : 1;         // valor inicial de img_out
+  const op = isDil
+    ? (a, b) => a | b                    // OR para dilatação
+    : (a, b) => a & b;                   // AND para erosão
+  // pixel "mudou" significa: virou 0 na erosão, virou 1 na dilatação
+  const changed = isDil
+    ? (prev, next) => next === 1 && prev === 0
+    : (prev, next) => next === 0 && prev === 1;
+
+  // Monta o padding
+  const PADDED = Array.from({length:PR}, () => Array(PC).fill(padVal));
+  for(let r=0;r<ROWS;r++)
+    for(let c=0;c<COLS;c++)
+      PADDED[r+PAD][c+PAD] = IMG[r][c];
+
+  steps = [];
+
+  // Passo inicial
+  const initOut = Array.from({length:ROWS}, () => Array(COLS).fill(initVal));
+  steps.push({
+    type:'init', seR:-1, seC:-1, dr:0, dc:0, sub:null,
+    out: initOut, newPixels: [], padded: PADDED,
+    info: isDil
+      ? `<strong>Estado Inicial — Dilatação</strong><br>
+         img_out começa toda em <code>0</code>. Operação: <strong>OR</strong>. Padding: <code>0</code> (neutro do OR).<br>
+         A cada iteração, um recorte deslocado é extraído e combinado com OR — pixels brancos se expandem.`
+      : `<strong>Estado Inicial — Erosão</strong><br>
+         img_out começa toda em <code>1</code>. Operação: <strong>AND</strong>. Padding: <code>1</code> (neutro do AND).<br>
+         A cada iteração, um recorte deslocado é extraído e combinado com AND — pixels brancos encolhem.`
+  });
+
+  let accumulated = initOut.map(r=>r.slice());
+
+  for(let r=0;r<M;r++){
+    for(let c=0;c<N;c++){
+      if(SE[r][c] === 0) continue;
+      const dr = r - CR, dc = c - CC;
+
+      const sub = [];
+      for(let i=0;i<ROWS;i++){
+        const row = [];
+        for(let j=0;j<COLS;j++)
+          row.push(PADDED[i+PAD+dr][j+PAD+dc]);
+        sub.push(row);
+      }
+
+      const prevAcc = accumulated.map(r=>r.slice());
+      const newAcc  = accumulated.map((row,i) => row.map((v,j) => op(v, sub[i][j])));
+      const newPx   = [];
+      for(let i=0;i<ROWS;i++)
+        for(let j=0;j<COLS;j++)
+          if(changed(prevAcc[i][j], newAcc[i][j])) newPx.push([i,j]);
+
+      accumulated = newAcc;
+      const opName = isDil ? 'OR' : 'AND';
+      const changeLabel = isDil
+        ? (newPx.length > 0 ? `<br><span style="color:#10b981;font-weight:700">${newPx.length} pixel(s) expandido(s) para 1.</span>` : '<br>Nenhum pixel novo ativado.')
+        : (newPx.length > 0 ? `<br><span style="color:#e11d48;font-weight:700">${newPx.length} pixel(s) erodido(s) para 0.</span>` : '<br>Nenhum pixel removido nesta iteração.');
+
+      steps.push({
+        type:'step', seR:r, seC:c, dr, dc, sub,
+        out: accumulated.map(r=>r.slice()), newPixels: newPx, padded: PADDED,
+        info: `<strong>SE posição (${r+1},${c+1}) de (3,3)</strong> — ativa (valor = 1)<br>
+          Deslocamento: <code>dr = ${r+1}−2 = ${dr>=0?'+':''}${dr}</code>,
+          <code>dc = ${c+1}−2 = ${dc>=0?'+':''}${dc}</code>
+          → imagem deslocada <strong>${dirLabel(dr,dc)}</strong><br>
+          Recorte extraído e aplicado <strong>${opName}</strong> em img_out.${changeLabel}`
+      });
+    }
+  }
+
+  const total1 = accumulated.flat().filter(v=>v).length;
+  steps.push({
+    type:'done', seR:-1, seC:-1, dr:0, dc:0, sub:null,
+    out: accumulated.map(r=>r.slice()), newPixels:[], padded: PADDED,
+    info: isDil
+      ? `<strong>Dilatação concluída!</strong><br>
+         Todas as 9 iterações do SE foram aplicadas com OR. O bloco 2×2 expandiu — resultado: ${total1} pixels em 1.`
+      : `<strong>Erosão concluída!</strong><br>
+         Todas as 9 iterações do SE foram aplicadas com AND. O bloco 2×2 encolheu — resultado: ${total1} pixels em 1.`
+  });
+}
+
+// ── Renderização ──────────────────────────────────────────────────────────────
+function render(){
+  const s = steps[current];
+  const isDil = mode === 'dilation';
+
+  document.getElementById('stepNum').textContent = current;
+  document.getElementById('stepTotal').textContent = steps.length - 1;
+  document.getElementById('stepInfo').innerHTML = s.info;
+  document.getElementById('btnPrev').disabled = current === 0;
+  document.getElementById('btnNext').disabled = current === steps.length - 1;
+
+  // Título do painel de resultado
+  document.querySelector('#gridOut').closest('.panel').querySelector('h2').textContent =
+    `img_out — Resultado (${isDil ? 'OR' : 'AND'})`;
+  document.querySelector('#gridOut').closest('.panel').querySelector('.desc').textContent =
+    isDil ? 'OR acumulado de todos os recortes.' : 'AND acumulado de todos os recortes.';
+
+  renderPadded(s);
+  renderSub(s);
+  renderSE(s);
+  renderOut(s, isDil);
+}
+
+function renderPadded(s){
+  const el = document.getElementById('gridPadded');
+  el.innerHTML = '';
+  const inCrop = new Set();
+  if(s.sub !== null)
+    for(let i=0;i<ROWS;i++)
+      for(let j=0;j<COLS;j++)
+        inCrop.add((i+PAD+s.dr)+','+(j+PAD+s.dc));
+
+  for(let r=0;r<PR;r++)
+    for(let c=0;c<PC;c++){
+      const d = document.createElement('div');
+      const v = s.padded[r][c];
+      d.className = 'cell ' + (inCrop.has(r+','+c) ? 'cell-hi' : v ? 'cell-1' : 'cell-0');
+      d.textContent = v;
+      el.appendChild(d);
+    }
+
+  const padVal = mode === 'dilation' ? 0 : 1;
+  document.getElementById('descPadded').textContent = s.sub !== null
+    ? `Recorte laranja começa em linha ${1+PAD+s.dr}, coluna ${1+PAD+s.dc}.`
+    : `Padding preenchido com ${padVal} (neutro do ${mode === 'dilation' ? 'OR' : 'AND'}).`;
+}
+
+function renderSub(s){
+  const el = document.getElementById('gridSub');
+  el.innerHTML = '';
+  if(!s.sub){
+    for(let i=0;i<ROWS*COLS;i++){
+      const d = document.createElement('div');
+      d.className='cell cell-0'; d.textContent='—';
+      el.appendChild(d);
+    }
+    document.getElementById('descSub').textContent = 'Aguardando primeira iteração.';
+    return;
+  }
+  for(let r=0;r<ROWS;r++)
+    for(let c=0;c<COLS;c++){
+      const d = document.createElement('div');
+      d.className = 'cell '+(s.sub[r][c]?'cell-1':'cell-0');
+      d.textContent = s.sub[r][c];
+      el.appendChild(d);
+    }
+  document.getElementById('descSub').textContent =
+    `Deslocamento (dr=${s.dr>=0?'+':''}${s.dr}, dc=${s.dc>=0?'+':''}${s.dc}) — ${dirLabel(s.dr,s.dc)}.`;
+}
+
+function renderSE(s){
+  const el = document.getElementById('gridSE');
+  el.innerHTML = '';
+  for(let r=0;r<M;r++)
+    for(let c=0;c<N;c++){
+      const d = document.createElement('div');
+      const isCur = r===s.seR && c===s.seC;
+      d.className = 'cell '+(isCur?'cell-se-cur':SE[r][c]?'cell-se-on':'cell-se-off');
+      d.textContent = SE[r][c];
+      el.appendChild(d);
+    }
+  document.getElementById('descSE').textContent = s.seR>=0
+    ? `Posição atual: linha ${s.seR+1}, coluna ${s.seC+1}.`
+    : 'Nenhuma posição ativa no momento.';
+}
+
+function renderOut(s, isDil){
+  const el = document.getElementById('gridOut');
+  el.innerHTML = '';
+  const newSet = new Set(s.newPixels.map(([r,c])=>r+','+c));
+  for(let r=0;r<ROWS;r++)
+    for(let c=0;c<COLS;c++){
+      const d = document.createElement('div');
+      const v = s.out[r][c];
+      const isChanged = newSet.has(r+','+c);
+      d.className = 'cell '+(isChanged ? (isDil?'cell-new':'cell-new-ero') : v?'cell-1':'cell-0');
+      d.textContent = v;
+      el.appendChild(d);
+    }
+  const total1 = s.out.flat().filter(v=>v).length;
+  const desc = document.getElementById('gridOut').closest('.panel').querySelector('.desc');
+  desc.textContent = s.type==='done'
+    ? `Resultado final: ${total1} pixel(s) em 1.`
+    : `${isDil?'OR':'AND'} acumulado: ${total1} pixel(s) em 1.`;
+}
+
+// ── Controles ─────────────────────────────────────────────────────────────────
+function setMode(m){
+  if(playing) togglePlay();
+  mode = m;
+  buildSteps();
+  current = 0;
+
+  const isDil = m === 'dilation';
+  document.getElementById('mainTitle').textContent =
+    isDil ? 'Animação — Dilatação Morfológica' : 'Animação — Erosão Morfológica';
+  document.getElementById('btnDil').style.background = isDil ? '#3949ab' : '#e2e8f0';
+  document.getElementById('btnDil').style.color      = isDil ? '#fff'    : '#475569';
+  document.getElementById('btnEro').style.background = isDil ? '#e2e8f0' : '#c0392b';
+  document.getElementById('btnEro').style.color      = isDil ? '#475569' : '#fff';
+
+  render();
+}
+
+function next()  { if(current < steps.length-1){ current++; render(); } }
+function prev()  { if(current > 0){ current--; render(); } }
+function reset() { current = 0; render(); if(playing) togglePlay(); }
+
+function togglePlay(){
+  playing = !playing;
+  document.getElementById('btnPlay').textContent = playing ? '⏸ Pausar' : '▶ Auto';
+  document.getElementById('btnPlay').style.background = playing ? '#e11d48' : '#10b981';
+  if(playing){
+    timer = setInterval(() => {
+      if(current < steps.length-1){ current++; render(); }
+      else togglePlay();
+    }, 1200);
+  } else {
+    clearInterval(timer);
+  }
+}
+
+// célula erodida (virou 0) aparece em laranja
+const style = document.createElement('style');
+style.textContent = '.cell-new-ero { background:#f59e0b !important; color:#fff !important; transform:scale(1.08); }';
+document.head.appendChild(style);
+
+setMode('dilation');
+</script>
+</body>
+</html>
