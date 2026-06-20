@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz — Listas 5, 6, 7 e 8</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #222;
+      padding: 32px 16px;
+    }
+
+    .container { max-width: 760px; margin: 0 auto; }
+
+    header { text-align: center; margin-bottom: 36px; }
+    header h1 { font-size: 1.8rem; color: #1a1a2e; }
+    header p  { color: #555; margin-top: 6px; font-size: 0.95rem; }
+
+    .question-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .question-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .question-text {
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      color: #1a1a2e;
+    }
+
+    .options { display: flex; flex-direction: column; gap: 10px; }
+
+    .option {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+
+    .option:hover { border-color: #6c63ff; background: #f5f4ff; }
+
+    .option .bubble {
+      width: 20px; height: 20px; min-width: 20px;
+      border-radius: 50%;
+      border: 2px solid #ccc;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 1px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .option .bubble::after {
+      content: '';
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: transparent;
+      transition: background 0.15s;
+    }
+
+    .option.selected { border-color: #6c63ff; background: #f5f4ff; }
+    .option.selected .bubble { border-color: #6c63ff; }
+    .option.selected .bubble::after { background: #6c63ff; }
+
+    .option.correct  { border-color: #27ae60 !important; background: #eafaf1 !important; }
+    .option.correct .bubble { border-color: #27ae60 !important; }
+    .option.correct .bubble::after { background: #27ae60 !important; }
+
+    .option.wrong    { border-color: #e74c3c !important; background: #fdf0ee !important; }
+    .option.wrong .bubble { border-color: #e74c3c !important; }
+    .option.wrong .bubble::after { background: #e74c3c !important; }
+
+    .option.reveal   { border-color: #27ae60 !important; background: #eafaf1 !important; }
+    .option.reveal .bubble { border-color: #27ae60 !important; }
+    .option.reveal .bubble::after { background: #27ae60 !important; }
+
+    .option-text { font-size: 0.95rem; line-height: 1.5; }
+
+    .feedback {
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      display: none;
+    }
+    .feedback.show { display: block; }
+    .feedback.correct-fb { background: #eafaf1; color: #1e8449; border-left: 4px solid #27ae60; }
+    .feedback.wrong-fb   { background: #fdf0ee; color: #c0392b; border-left: 4px solid #e74c3c; }
+
+    .check-btn {
+      margin-top: 16px;
+      padding: 9px 22px;
+      background: #6c63ff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .check-btn:hover { background: #574fd6; }
+    .check-btn:disabled { background: #bbb; cursor: default; }
+
+    .score-bar {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-top: 12px;
+      display: none;
+    }
+    .score-bar h2 { font-size: 1.4rem; color: #1a1a2e; margin-bottom: 8px; }
+    .score-bar .score-num { font-size: 3rem; font-weight: 800; color: #6c63ff; }
+    .score-bar .score-nota { font-size: 1.6rem; font-weight: 700; color: #1a1a2e; margin-top: 6px; }
+    .score-bar p { color: #555; margin-top: 8px; }
+
+    .submit-all {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.15s;
+    }
+    .submit-all:hover { background: #2d2d5e; }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    .tag-5 { background: #dbeafe; color: #1d4ed8; }
+    .tag-6 { background: #fce7f3; color: #9d174d; }
+    .tag-7 { background: #d1fae5; color: #065f46; }
+    .tag-8 { background: #fef3c7; color: #92400e; }
+
+    .filter-bar {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .filter-bar p { font-size: 0.85rem; color: #555; margin-bottom: 12px; }
+    .filter-toggles { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .filter-btn {
+      padding: 8px 18px;
+      border-radius: 20px;
+      border: 2px solid #e0e0e0;
+      background: #fff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-btn.active-5 { border-color: #1d4ed8; background: #dbeafe; color: #1d4ed8; }
+    .filter-btn.active-6 { border-color: #9d174d; background: #fce7f3; color: #9d174d; }
+    .filter-btn.active-7 { border-color: #065f46; background: #d1fae5; color: #065f46; }
+    .filter-btn.active-8 { border-color: #92400e; background: #fef3c7; color: #92400e; }
+    .start-btn {
+      padding: 10px 28px;
+      background: #6c63ff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .start-btn:hover { background: #574fd6; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Quiz — Listas 5, 6, 7 e 8</h1>
+    <p>Visão Computacional · AUT0237 · Selecione sua resposta e clique em Verificar</p>
+  </header>
+
+  <div class="filter-bar">
+    <p>Selecione quais listas incluir no quiz:</p>
+    <div class="filter-toggles">
+      <button class="filter-btn active-5" id="btn-5" onclick="toggleLista('5')">Lista 5</button>
+      <button class="filter-btn active-6" id="btn-6" onclick="toggleLista('6')">Lista 6</button>
+      <button class="filter-btn active-7" id="btn-7" onclick="toggleLista('7')">Lista 7</button>
+      <button class="filter-btn active-8" id="btn-8" onclick="toggleLista('8')">Lista 8</button>
+    </div>
+    <button class="start-btn" onclick="startQuiz()">Iniciar Quiz</button>
+  </div>
+
+  <div id="quiz-root"></div>
+  <button class="submit-all" id="submit-btn" style="display:none" onclick="showScore()">Ver Resultado Final</button>
+  <div class="score-bar" id="scorebar">
+    <h2>Resultado</h2>
+    <div class="score-num" id="scorenum"></div>
+    <div class="score-nota" id="scorenota"></div>
+    <p id="scoremsg"></p>
+  </div>
+</div>
+
+<script>
+// =====================================================================
+// BANCO DE QUESTÕES — para adicionar uma questão, basta copiar um bloco
+// abaixo e preencher: lista, question, options (a/b/c/d), correct, explanation
+// =====================================================================
+const QUESTIONS = [
+  {
+    lista: '5',
+    question: 'Como você distingue ruído gaussiano de ruído uniforme olhando apenas o histograma da imagem?',
+    options: {
+      a: 'O gaussiano forma um bloco plano e o uniforme forma uma curva em sino.',
+      b: 'O gaussiano forma uma curva em sino centrada num valor; o uniforme forma um bloco plano com valores equiprováveis.',
+      c: 'Os dois formam a mesma curva, só diferem na largura.',
+      d: 'O gaussiano tem picos em 0 e 255; o uniforme tem pico no centro.'
+    },
+    correct: 'b',
+    explanation: 'O ruído gaussiano tem distribuição normal (sino), concentrado em torno de um valor médio. O ruído uniforme distribui a energia igualmente num intervalo, formando o bloco plano no histograma.'
+  },
+  {
+    lista: '5',
+    question: 'Entre os filtros de média aritmética, geométrica e harmônica, qual tende a borrar mais a imagem?',
+    options: {
+      a: 'Harmônica, pois inverte os valores dos pixels antes de calcular.',
+      b: 'Geométrica, pois multiplica todos os vizinhos.',
+      c: 'Aritmética, pois faz a média simples de todos os vizinhos sem distinção, suavizando bordas indiscriminadamente.',
+      d: 'Todas borram igualmente.'
+    },
+    correct: 'c',
+    explanation: 'A média aritmética soma todos os vizinhos e divide pelo total. Isso inclui pixels muito diferentes do centro no cálculo, espalhando valores abruptamente e borrando as bordas.'
+  },
+  {
+    lista: '5',
+    question: 'Por que o filtro de mediana é superior aos filtros de média para remover ruído sal-e-pimenta?',
+    options: {
+      a: 'Porque calcula a média apenas dos pixels mais escuros da janela.',
+      b: 'Porque descarta os valores extremos ao escolher o valor central da janela ordenada, sem espalhar o ruído.',
+      c: 'Porque usa uma janela maior que os filtros de média.',
+      d: 'Porque aplica um limiar antes de calcular.'
+    },
+    correct: 'b',
+    explanation: 'O ruído sal-e-pimenta cria pixels com valores extremos (0 ou 255). A mediana ordena os vizinhos e pega o do meio — os extremos ficam nas pontas da lista e são ignorados. Os filtros de média incluem esses extremos e os espalham pela imagem.'
+  },
+  {
+    lista: '5',
+    question: 'No exercício 6 da Lista 5 a filtragem inversa funciona bem, mas no exercício 7 ela falha completamente. O que muda entre os dois exercícios?',
+    options: {
+      a: 'O exercício 7 usa uma janela de borramento maior.',
+      b: 'O exercício 7 usa uma imagem diferente.',
+      c: 'O exercício 7 adiciona ruído gaussiano após o borramento, e a divisão por H amplifica esse ruído nas altas frequências de forma catastrófica.',
+      d: 'O exercício 7 não aplica o borramento antes da filtragem inversa.'
+    },
+    correct: 'c',
+    explanation: 'A filtragem inversa divide G por H no domínio da frequência. O filtro de média H tem valores próximos de zero nas altas frequências. Quando existe ruído N, a equação vira F + N/H — e N dividido por valores perto de zero explode, destruindo a imagem.'
+  },
+  {
+    lista: '5',
+    question: 'Por que para estimar o ruído de uma imagem usamos o histograma de uma região homogênea (fundo plano) em vez da imagem inteira?',
+    options: {
+      a: 'Porque o histograma da imagem inteira é muito lento de calcular.',
+      b: 'Numa região plana, sem textura, toda variação de intensidade se deve exclusivamente ao ruído — isolando sua assinatura sem misturar com variações da cena.',
+      c: 'Porque o ruído só aparece nas bordas dos objetos, e o fundo não tem bordas.',
+      d: 'Porque regiões com textura têm ruído menor e atrapalhariam o cálculo.'
+    },
+    correct: 'b',
+    explanation: 'Em uma região plana ideal, todos os pixels deveriam ter o mesmo valor. Qualquer variação que aparece ali é causada pelo ruído. Na imagem inteira, a variação de intensidade mistura ruído com textura e bordas dos objetos, tornando impossível separar um do outro.'
+  },
+  {
+    lista: '5',
+    question: 'O filtro de média geométrica usa um truque com logaritmo para evitar estouro numérico. Qual é a equivalência matemática usada?',
+    options: {
+      a: 'Média Geométrica = log( Soma dos pixels )',
+      b: 'Média Geométrica = exp( Média Aritmética dos log dos pixels )',
+      c: 'Média Geométrica = log( Produto dos pixels ) / N',
+      d: 'Média Geométrica = sqrt( Média Aritmética dos pixels ao quadrado )'
+    },
+    correct: 'b',
+    explanation: 'Calcular 255^25 estoura qualquer variável. O truque: log(a×b) = log(a)+log(b). Então o produto de N pixels vira uma soma de logaritmos. Tirando a média dessa soma e aplicando exp() no final, obtemos a média geométrica sem nunca multiplicar diretamente os valores.'
+  },
+  {
+    lista: '5',
+    question: 'Na filtragem inversa do exercício 6, por que é necessário usar um limiar (limiar = 0.05) ao dividir por H?',
+    options: {
+      a: 'Para limitar o brilho máximo da imagem recuperada a 5% do valor original.',
+      b: 'Para evitar divisão por zero ou por valores muito próximos de zero, que amplificariam o ruído infinitamente nas altas frequências.',
+      c: 'Para remover as baixas frequências da imagem antes da recuperação.',
+      d: 'Para garantir que a FFT seja calculada apenas nas frequências relevantes.'
+    },
+    correct: 'b',
+    explanation: 'O filtro de média H bloqueia as altas frequências, fazendo H ≈ 0 nelas. Dividir qualquer valor por 0 gera infinito. O limiar cria uma máscara: só divide onde |H| > 0.05, ignorando frequências onde H é tão pequeno que a divisão destruiria a imagem.'
+  },
+  {
+    lista: '5',
+    question: 'O filtro de média geométrica é bom para remover qual tipo específico de ruído, e por quê é péssimo para o oposto?',
+    options: {
+      a: 'Bom para ruído gaussiano; ruim para ruído uniforme.',
+      b: 'Bom para ruído "sal" (pixels brancos); ruim para ruído "pimenta" (pixels pretos), pois valores próximos de zero puxam o produto — e a média geométrica — para zero.',
+      c: 'Bom para ruído "pimenta" (pixels pretos); ruim para ruído "sal" (pixels brancos).',
+      d: 'Bom para qualquer tipo de ruído impulsivo.'
+    },
+    correct: 'b',
+    explanation: 'A média geométrica é uma multiplicação. Um pixel branco (valor alto) na janela eleva o produto, mas não tanto. Já um pixel preto (valor ≈ 0) multiplica todo o produto por quase zero, escurecendo dramaticamente aquela região. Por isso funciona para sal mas destrói imagens com pimenta.'
+  },
+  {
+    lista: '5',
+    question: 'Por que o filtro de Wiener é superior à filtragem inversa simples quando há ruído na imagem?',
+    options: {
+      a: 'Porque o filtro de Wiener usa uma janela maior de pixels.',
+      b: 'Porque o filtro de Wiener leva em conta a relação entre a potência do sinal e a potência do ruído, evitando amplificar o ruído nas frequências onde H é pequeno.',
+      c: 'Porque o filtro de Wiener opera no domínio espacial, enquanto a filtragem inversa opera no domínio da frequência.',
+      d: 'Porque o filtro de Wiener não precisa conhecer o filtro H que degradou a imagem.'
+    },
+    correct: 'b',
+    explanation: 'A filtragem inversa divide por H sem considerar o ruído, amplificando-o catastroficamente onde H ≈ 0. O filtro de Wiener inclui um termo SNR (relação sinal-ruído): quando o ruído é alto em relação ao sinal (SNR baixo), ele atenua a resposta em vez de amplificar — chegando a um compromisso ótimo entre deconvolução e supressão de ruído.'
+  },
+  {
+    lista: '5',
+    question: 'O que acontece visualmente com uma imagem ao aplicar um filtro de média aritmética repetidamente várias vezes?',
+    options: {
+      a: 'A imagem fica mais nítida a cada iteração.',
+      b: 'A imagem converge para uma imagem com bordas mais marcadas.',
+      c: 'A imagem progressivamente se torna mais borrada, aproximando-se de uma distribuição gaussiana — pois a média repetida converge para uma convolução com gaussiana pelo Teorema Central do Limite.',
+      d: 'Após 3 aplicações a imagem não muda mais.'
+    },
+    correct: 'c',
+    explanation: 'Pelo Teorema Central do Limite, a convolução repetida de qualquer filtro de média converge para uma gaussiana. Visualmente isso significa borramentos progressivos e uniformes — bordas desaparecem e detalhes finos somem. É por isso que o filtro gaussiano é preferido ao de média quando se quer borramento controlado: ele chega diretamente ao resultado final.'
+  },
+  {
+    lista: '5',
+    question: 'Por que o filtro de mediana preserva bordas melhor do que o filtro de média aritmética?',
+    options: {
+      a: 'Porque a mediana usa uma janela menor.',
+      b: 'Porque a mediana sempre escolhe um pixel que já existe na janela, sem criar valores interpolados — numa borda, o pixel central provavelmente é a mediana de um dos dois lados.',
+      c: 'Porque a mediana aplica um detector de bordas antes de filtrar.',
+      d: 'Porque a mediana pondera pixels próximos ao centro com maior peso.'
+    },
+    correct: 'b',
+    explanation: 'Numa borda, metade dos pixels da janela pertencem a um lado (ex: valor 200) e metade ao outro (ex: valor 50). A mediana será um pixel real de um dos lados — preservando a borda. A média aritmética somaria os dois lados e produziria um valor intermediário (~125) que não existe na imagem original, "espalhando" a borda por vários pixels.'
+  },
+  {
+    lista: '5',
+    question: 'Por que é necessário aplicar zero-padding (preenchimento com zeros) antes de realizar convolução no domínio da frequência usando FFT?',
+    options: {
+      a: 'Para aumentar a resolução da FFT e detectar mais frequências.',
+      b: 'Para evitar o efeito de aliasing temporal na transformada.',
+      c: 'Porque a FFT assume periodicidade — sem padding, as bordas da imagem "envolvem" e criam artefatos de convolução circular nos cantos.',
+      d: 'Para garantir que a imagem tenha dimensões múltiplas de 256.'
+    },
+    correct: 'c',
+    explanation: 'A FFT implementa convolução circular: trata a imagem como se ela se repetisse infinitamente. Sem padding, o lado direito da imagem "encontra" o lado esquerdo na convolução, gerando artefatos visíveis nas bordas. O zero-padding garante espaço suficiente para que a convolução linear e circular sejam equivalentes.'
+  },
+  {
+    lista: '5',
+    question: 'Qual das alternativas descreve corretamente o ruído speckle (granular), comum em imagens de ultrassom e radar?',
+    options: {
+      a: 'É um ruído aditivo gaussiano que some com filtros de média.',
+      b: 'É um ruído multiplicativo: o ruído é proporcional à intensidade local do pixel, então regiões brilhantes ficam mais ruidosas que regiões escuras.',
+      c: 'É idêntico ao ruído sal-e-pimenta, apenas com outro nome.',
+      d: 'É causado exclusivamente por defeitos no sensor da câmera.'
+    },
+    correct: 'b',
+    explanation: 'Diferente do ruído aditivo (n_aditivo = sinal + ruído), o speckle é multiplicativo: sinal_ruidoso = sinal × ruído. Isso significa que regiões com alta intensidade sofrem mais ruído que regiões escuras. Filtros de média simples não funcionam bem — o ideal é trabalhar no domínio logarítmico para converter o ruído multiplicativo em aditivo antes de filtrar.'
+  },
+  {
+    lista: '6',
+    question: 'Por que converter a imagem de teste de daltonismo para tons de cinza não resolve o problema do daltônico?',
+    options: {
+      a: 'Porque daltônicos não enxergam em tons de cinza.',
+      b: 'Porque a conversão para cinza depende apenas do canal azul.',
+      c: 'Vermelho e verde podem ter a mesma luminosidade, resultando no mesmo tom de cinza e mantendo a informação inacessível.',
+      d: 'Porque a imagem cbt.bmp não tem canal verde.'
+    },
+    correct: 'c',
+    explanation: 'A conversão para cinza usa uma ponderação de luminosidade (ex: 0.299R + 0.587G + 0.114B). Se um objeto vermelho e um verde tiverem brilho similar, o resultado em cinza será praticamente igual — a distinção de cor se perde por completo.'
+  },
+  {
+    lista: '6',
+    question: 'No exercício 2 da Lista 6, como o código separa objetos vermelhos de verdes numericamente?',
+    options: {
+      a: 'Converte para HSV e separa pelo canal de matiz (Hue).',
+      b: 'Usa a diferença entre os canais R e G: pixels onde (R - G) > limiar são vermelhos; onde (G - R) > limiar são verdes.',
+      c: 'Compara o canal R com um valor fixo de 128: acima é vermelho, abaixo é verde.',
+      d: 'Usa o canal azul como referência: onde B é baixo, o pixel é vermelho ou verde.'
+    },
+    correct: 'b',
+    explanation: 'O código calcula mask_vermelho = (R - G) > 15 e mask_verde = (G - R) > 15. A diferença entre canais captura a dominância cromática sem depender do brilho absoluto — por isso funciona mesmo quando os objetos têm luminâncias parecidas, que é exatamente o que confunde o daltônico.'
+  },
+  {
+    lista: '6',
+    question: 'O que é protanopia e deuteranopia, e por que ambas causam confusão entre vermelho e verde?',
+    options: {
+      a: 'Protanopia é daltonismo total (visão em preto e branco); deuteranopia é sensibilidade reduzida ao azul.',
+      b: 'Protanopia é ausência dos cones sensíveis ao vermelho (L); deuteranopia é ausência dos cones sensíveis ao verde (M). Sem um dos dois, o cérebro não consegue distinguir os dois matizes.',
+      c: 'Protanopia afeta apenas homens; deuteranopia afeta apenas mulheres.',
+      d: 'As duas são o mesmo tipo de daltonismo, apenas com nomenclaturas diferentes para graus de severidade.'
+    },
+    correct: 'b',
+    explanation: 'O olho humano tem 3 tipos de cones: S (azul), M (verde) e L (vermelho). A protanopia é a ausência dos cones L; a deuteranopia, dos cones M. Sem um dos dois, o sinal que o cérebro recebe para distinguir verde de vermelho é ambíguo — ambas as cores produzem resposta similar nos cones restantes.'
+  },
+  {
+    lista: '6',
+    question: 'Quais são os três componentes do espaço de cores HSV e o que cada um representa?',
+    options: {
+      a: 'H = brilho, S = matiz, V = saturação.',
+      b: 'H = matiz (ângulo da cor no círculo cromático), S = saturação (pureza da cor), V = valor (brilho/luminosidade).',
+      c: 'H = alto contraste, S = suavização, V = variância.',
+      d: 'H = vermelho, S = verde, V = azul reorganizados em ordem de frequência.'
+    },
+    correct: 'b',
+    explanation: 'No HSV: H (Hue) é o ângulo no círculo cromático (0°=vermelho, 120°=verde, 240°=azul); S (Saturation) vai de 0 (cinza) a 1 (cor pura); V (Value) vai de 0 (preto) a 1 (cor máxima). Separar a informação de cor (H) da luminosidade (V) é o grande trunfo do HSV sobre o RGB para segmentação.'
+  },
+  {
+    lista: '6',
+    question: 'Por que o espaço HSV é mais robusto que o RGB para segmentação de cores sob diferentes condições de iluminação?',
+    options: {
+      a: 'Porque o HSV usa 4 canais enquanto o RGB usa apenas 3.',
+      b: 'Porque no HSV a informação de cor (H) está separada da luminosidade (V) — variações de iluminação afetam V mas não mudam H, permitindo segmentar pela cor independente do brilho.',
+      c: 'Porque o HSV comprime a imagem antes de processar.',
+      d: 'Porque o canal S do HSV remove automaticamente o ruído da imagem.'
+    },
+    correct: 'b',
+    explanation: 'No RGB, uma mudança de iluminação afeta R, G e B simultaneamente, tornando difícil definir um limiar fixo para uma cor. No HSV, a mesma cor sob iluminações diferentes mantém o mesmo H — apenas V muda. Por isso um limiar simples no canal H segmenta a cor de forma muito mais robusta que um limiar nos canais RGB.'
+  },
+  {
+    lista: '6',
+    question: 'O que é pseudo-coloração de imagens e para que é usada?',
+    options: {
+      a: 'É a conversão de imagens coloridas para escala de cinza com alta qualidade.',
+      b: 'É a atribuição de cores a pixels de uma imagem em tons de cinza usando um mapa de cores, para facilitar a interpretação humana de variações de intensidade.',
+      c: 'É uma técnica para corrigir cores em imagens de câmeras com defeito.',
+      d: 'É o processo de misturar duas imagens coloridas em uma só.'
+    },
+    correct: 'b',
+    explanation: 'O olho humano distingue muito mais variações de cor do que de cinza — conseguimos diferenciar milhares de cores mas apenas ~200 tons de cinza. A pseudo-coloração aplica um mapa de cores (colormap) a imagens em escala de cinza para tornar diferenças sutis de intensidade imediatamente visíveis. É amplamente usada em imagens médicas, termografia e visualização científica.'
+  },
+  {
+    lista: '6',
+    question: 'Por que usar apenas o canal R (vermelho) para detectar pixels vermelhos no RGB não é suficiente?',
+    options: {
+      a: 'Porque o canal R não existe em imagens JPEG.',
+      b: 'Porque pixels brancos (R=255, G=255, B=255) e amarelos (R=255, G=255, B=0) também têm R alto — a diferença (R-G) ou conversão para HSV é necessária para isolar o vermelho puro.',
+      c: 'Porque o canal R é sempre igual ao canal G em imagens naturais.',
+      d: 'Porque o canal R sozinho não tem resolução suficiente para segmentação.'
+    },
+    correct: 'b',
+    explanation: 'Pixels brancos têm R=255 mas não são vermelhos. Pixels amarelos também têm R alto. Para detectar vermelho puro precisamos que R seja alto E G seja baixo. A diferença (R-G) > limiar captura essa condição: vermelho puro tem R alto e G baixo; branco e amarelo têm G alto, então a diferença é pequena e não ultrapassa o limiar.'
+  },
+  {
+    lista: '6',
+    question: 'Como a iluminação da cena afeta a detecção de cor no espaço RGB e como minimizar esse problema?',
+    options: {
+      a: 'A iluminação não afeta o RGB pois a câmera compensa automaticamente.',
+      b: 'Iluminação forte aumenta todos os canais proporcionalmente; iluminação fraca os diminui — o mesmo objeto pode ter valores RGB completamente diferentes sob luz diferente, dificultando limiarização fixa.',
+      c: 'Apenas o canal B é afetado pela iluminação; R e G são estáveis.',
+      d: 'A solução é sempre aplicar um filtro de mediana antes da segmentação.'
+    },
+    correct: 'b',
+    explanation: 'Uma bola vermelha sob luz forte pode ter RGB=(230,40,40); sob luz fraca, RGB=(80,15,15). Ambas são vermelhas, mas um limiar fixo em R>150 detectaria apenas a primeira. Soluções: (1) normalizar RGB dividindo cada canal pela soma R+G+B; (2) converter para HSV e usar o canal H, que é invariante à luminosidade; (3) usar iluminação controlada no ambiente.'
+  },
+  {
+    lista: '7',
+    question: 'Qual é a diferença fundamental entre erosão e dilatação em termos de lógica booleana?',
+    options: {
+      a: 'Erosão usa OR (basta um vizinho ser branco); dilatação usa AND (todos os vizinhos precisam ser brancos).',
+      b: 'Erosão usa AND (todos os vizinhos precisam ser brancos); dilatação usa OR (basta um vizinho ser branco).',
+      c: 'As duas usam AND, mas com elementos estruturantes diferentes.',
+      d: 'As duas usam OR, mas a erosão inverte a imagem antes.'
+    },
+    correct: 'b',
+    explanation: 'Na erosão, o pixel de saída só é 1 se TODOS os vizinhos definidos pelo SE forem 1 (AND). Na dilatação, basta que pelo menos UM vizinho seja 1 (OR). Por isso a erosão encolhe e a dilatação expande.'
+  },
+  {
+    lista: '7',
+    question: 'Por que a abertura não fecha as fendas do texto, mas o fechamento consegue?',
+    options: {
+      a: 'A abertura usa um elemento estruturante menor que o fechamento.',
+      b: 'Na abertura a erosão roda primeiro e aumenta as fendas; no fechamento a dilatação roda primeiro e preenche as fendas antes da erosão restaurar o contorno.',
+      c: 'A abertura só funciona em imagens coloridas.',
+      d: 'O fechamento aplica a operação mais vezes que a abertura.'
+    },
+    correct: 'b',
+    explanation: 'Abertura = Erosão → Dilatação. A erosão amplia os gaps e a dilatação só restaura o que restou. Fechamento = Dilatação → Erosão. A dilatação cria pontes sólidas nos gaps; a erosão encolhe de volta mas as pontes sobrevivem.'
+  },
+  {
+    lista: '7',
+    question: 'Por que o padding da erosão é preenchido com 1 (true) enquanto o da dilatação é preenchido com 0 (false)?',
+    options: {
+      a: 'É uma convenção arbitrária sem efeito prático.',
+      b: 'Na erosão, padding 0 faria as bordas da imagem serem erodidas como se houvesse pixels pretos ao redor. Na dilatação, padding 1 expandiria objetos a partir do nada fora dos limites.',
+      c: 'O padding da erosão precisa ser 1 para aumentar o tamanho da imagem de saída.',
+      d: 'O padding apenas serve para evitar erros de índice e o valor não importa.'
+    },
+    correct: 'b',
+    explanation: 'O valor do padding precisa ser o elemento neutro da operação. AND com 1 não afeta o resultado (neutro da erosão). OR com 0 não afeta o resultado (neutro da dilatação). Usar o valor errado distorceria o comportamento nas bordas da imagem.'
+  },
+  {
+    lista: '7',
+    question: 'Qual operação morfológica você usaria para remover pequenos pontos de ruído isolados (sem afetar os objetos maiores) e por quê?',
+    options: {
+      a: 'Fechamento, pois preenche os buracos deixados pelo ruído.',
+      b: 'Dilatação, pois expande os objetos e encobre o ruído ao redor.',
+      c: 'Abertura, pois a erosão elimina os pontos pequenos e a dilatação subsequente restaura o tamanho dos objetos grandes que sobreviveram.',
+      d: 'Erosão simples, pois encolhe tudo uniformemente incluindo o ruído.'
+    },
+    correct: 'c',
+    explanation: 'A abertura (erosão → dilatação) é a ferramenta certa: a erosão destrói os pontos pequenos que não cabem dentro do elemento estruturante, enquanto os objetos grandes apenas encolhem. A dilatação seguinte os restaura ao tamanho original. Os pontinhos de ruído, já destruídos, não voltam.'
+  },
+  {
+    lista: '7',
+    question: 'Como se extrai morfologicamente a borda de um objeto binário?',
+    options: {
+      a: 'Aplicando dilatação seguida de abertura.',
+      b: 'Subtraindo a imagem erodida da imagem original: borda = original − erosão(original).',
+      c: 'Aplicando fechamento e depois subtraindo a imagem original.',
+      d: 'Usando hit-or-miss com um elemento estruturante em forma de cruz.'
+    },
+    correct: 'b',
+    explanation: 'A erosão "encolhe" o objeto, removendo uma camada de pixels da borda. Ao subtrair a imagem erodida da original (borda = original − erosão), sobram exatamente os pixels que foram removidos pela erosão — ou seja, a borda do objeto. O tamanho da borda extraída depende do tamanho do elemento estruturante.'
+  },
+  {
+    lista: '7',
+    question: 'Como a forma do elemento estruturante (SE) afeta o resultado das operações morfológicas?',
+    options: {
+      a: 'A forma não importa; só o tamanho do SE afeta o resultado.',
+      b: 'Um SE circular erosiona igualmente em todas as direções; um SE retangular horizontal erosiona mais nas horizontais do que nas verticais — a forma define a geometria do que é preservado ou removido.',
+      c: 'SEs maiores sempre produzem melhores resultados independente da forma.',
+      d: 'A forma só importa na dilatação, não na erosão.'
+    },
+    correct: 'b',
+    explanation: 'O SE define a "vizinhança" que a operação considera. Um SE de linha horizontal detecta e preserva estruturas horizontais; um SE circular trata todas as direções igualmente. Por exemplo, para remover linhas verticais de uma imagem sem afetar as horizontais, usa-se um SE horizontal. Escolher a forma certa do SE é tão importante quanto escolher a operação.'
+  },
+  {
+    lista: '7',
+    question: 'O que é o gradiente morfológico e o que ele detecta em uma imagem?',
+    options: {
+      a: 'É a diferença entre erosão e abertura, usada para detectar texturas.',
+      b: 'É a diferença entre dilatação e erosão da imagem: gradiente = dilatação − erosão. Realça as bordas dos objetos, similar ao gradiente de Sobel mas baseado em morfologia.',
+      c: 'É a aplicação sequencial de abertura e fechamento para suavizar bordas.',
+      d: 'É o mesmo que o laplaciano morfológico, aplicado para detectar cantos.'
+    },
+    correct: 'b',
+    explanation: 'O gradiente morfológico calcula dilatação(img) − erosão(img). A dilatação expande e a erosão contrai o objeto — a diferença entre as duas resulta em uma imagem onde apenas as bordas (a região onde expansão e contração diferem) têm valores altos. É análogo ao gradiente de primeira ordem em processamento de sinais, mas robusto ao ruído por usar operações de máximo/mínimo.'
+  },
+  {
+    lista: '7',
+    question: 'O que é a transformada Top-Hat e para que problema ela é a solução ideal?',
+    options: {
+      a: 'É uma transformada para detectar objetos com formato de chapéu em imagens.',
+      b: 'White Top-Hat = original − abertura. Extrai objetos menores que o SE que foram removidos pela abertura — ideal para detectar detalhes brilhantes sobre fundo não-uniforme.',
+      c: 'É uma versão morfológica da FFT para análise de frequência.',
+      d: 'É a diferença entre fechamento e abertura, usada para equalizar o histograma.'
+    },
+    correct: 'b',
+    explanation: 'A abertura remove objetos menores que o SE. O White Top-Hat (original − abertura) recupera exatamente esses objetos removidos. Isso é poderoso para imagens com iluminação não-uniforme: a abertura com SE grande modela o fundo lentamente variável, e o Top-Hat subtrai esse fundo, deixando apenas os detalhes finos e brilhantes — como células em microscopia ou defeitos em superfícies industriais.'
+  },
+  {
+    lista: '7',
+    question: 'Como você verificaria se sua implementação de erosão está correta usando um caso simples?',
+    options: {
+      a: 'Aplicar a erosão em uma imagem toda branca e verificar se ela continua toda branca.',
+      b: 'Aplicar a erosão com um SE 1×1 (um único pixel) e verificar se a imagem de saída é idêntica à entrada — pois um SE de tamanho 1 não deve alterar nada.',
+      c: 'Comparar o histograma da imagem antes e depois da erosão.',
+      d: 'Aplicar erosão seguida de dilatação e verificar se o resultado é igual à abertura.'
+    },
+    correct: 'b',
+    explanation: 'Um SE 1×1 contém apenas o pixel central — todos os pixels "concordam" trivialmente com ele (AND com um único pixel é sempre o próprio pixel). Portanto a erosão com SE 1×1 deve retornar a imagem original inalterada. É um teste de sanidade rápido: se a saída difere da entrada, há um bug na implementação (provavelmente no índice central do SE ou no padding).'
+  },
+  {
+    lista: '8',
+    question: 'O que representa cada curva desenhada no espaço de Hough para a detecção de retas?',
+    options: {
+      a: 'Todas as retas possíveis que passam pela origem da imagem.',
+      b: 'Todas as combinações de ângulo e distância que formam uma reta passando por aquele pixel.',
+      c: 'A reta detectada após o processamento completo da imagem.',
+      d: 'O gradiente de intensidade ao redor daquele pixel.'
+    },
+    correct: 'b',
+    explanation: 'Para cada pixel (x, y) da imagem, existem infinitas retas que passam por ele — cada uma com um ângulo θ e uma distância ρ diferentes. A curva no espaço de Hough representa todas essas possibilidades. Onde as curvas de vários pixels se cruzam, é porque todos concordam em uma mesma reta: esse é o pico do acumulador.'
+  },
+  {
+    lista: '8',
+    question: 'Por que a representação slope-intercept (y = ax + b) falha para detectar retas verticais na Transformada de Hough?',
+    options: {
+      a: 'Porque retas verticais não existem em imagens digitais.',
+      b: 'Porque o acumulador não tem espaço suficiente para armazenar valores grandes.',
+      c: 'Porque tan(90°) = infinito, fazendo b = y - tan(90°)·x explodir e sair de qualquer índice válido.',
+      d: 'Porque retas verticais têm b = 0, o que é um índice inválido em Octave.'
+    },
+    correct: 'c',
+    explanation: 'Na forma y = ax + b, o slope a = tan(θ). Quando θ = 90° (reta vertical), tan(90°) = infinito. O cálculo de b = y - infinito·x resulta em -infinito, que não pode ser armazenado em nenhuma posição do acumulador. A forma polar ρ = x·cos(θ) + y·sin(θ) resolve isso porque cos e sin nunca explodem.'
+  },
+  {
+    lista: '8',
+    question: 'Na forma polar da Transformada de Hough, qual é a fórmula correta?',
+    options: {
+      a: 'ρ = x·tan(θ) + y·cos(θ)',
+      b: 'ρ = x·sin(θ) + y·cos(θ)',
+      c: 'ρ = x·cos(θ) + y·sin(θ)',
+      d: 'ρ = x·cos(θ) - y·sin(θ)'
+    },
+    correct: 'c',
+    explanation: 'A equação normal de uma reta em coordenadas polares é ρ = x·cos(θ) + y·sin(θ), onde ρ é a distância perpendicular da reta até a origem e θ é o ângulo dessa perpendicular com o eixo x. Essa formulação funciona para qualquer orientação de reta, incluindo verticais e horizontais.'
+  },
+  {
+    lista: '8',
+    question: 'Por que precisamos de um offset ao calcular b = y - tan(θ)·x na versão slope-intercept?',
+    options: {
+      a: 'Porque Octave não aceita índices maiores que 255.',
+      b: 'Porque b pode ser negativo (ex: b = 200 - tan(30°)·683 = -141) e matrizes em Octave só aceitam índices positivos.',
+      c: 'Porque o offset normaliza b para ficar entre 0 e 1.',
+      d: 'Para garantir que todos os pixels tenham o mesmo peso no acumulador.'
+    },
+    correct: 'b',
+    explanation: 'Para um pixel na coluna j = 683 e θ = 30°, temos b = 200 - 0.577·683 ≈ -194. Como índices de matriz em Octave começam em 1, -194 é inválido. O offset (= im_x) é somado a todo b calculado, deslocando o range de valores negativos para positivos. O acumulador precisa ser maior para acomodar esse deslocamento.'
+  },
+  {
+    lista: '8',
+    question: 'O que significa um pico (valor alto) no acumulador da Transformada de Hough?',
+    options: {
+      a: 'Que aquela região da imagem tem alto contraste.',
+      b: 'Que muitos pixels da imagem "votaram" para aquele conjunto de parâmetros, indicando uma reta ou círculo real.',
+      c: 'Que o algoritmo encontrou uma borda usando o filtro de Sobel.',
+      d: 'Que aquela posição do acumulador overflow e precisa ser reiniciada.'
+    },
+    correct: 'b',
+    explanation: 'O acumulador funciona como uma votação: cada pixel processa os parâmetros possíveis e incrementa a posição correspondente. Se muitos pixels concordam nos mesmos parâmetros (θ e ρ para uma reta, ou a e b para um círculo), o acumulador nessa posição acumula muitos votos — indicando uma figura geométrica real na imagem.'
+  },
+  {
+    lista: '8',
+    question: 'Por que após encontrar um pico no acumulador zeramos uma região ao redor dele antes de buscar o próximo?',
+    options: {
+      a: 'Para liberar memória RAM e acelerar o processamento.',
+      b: 'Para evitar que a mesma reta seja detectada múltiplas vezes em iterações seguintes.',
+      c: 'Para normalizar o acumulador antes da próxima busca.',
+      d: 'Porque o acumulador só pode ter um pico por vez.'
+    },
+    correct: 'b',
+    explanation: 'Um pico real no acumulador tem muitos votos concentrados. Se não zerássemos a região ao redor, a próxima iteração encontraria os vizinhos desse mesmo pico (com poucos votos a menos) e reportaria a mesma reta de novo. Zerando o entorno, forçamos o algoritmo a procurar o próximo pico independente.'
+  },
+  {
+    lista: '8',
+    question: 'Na Transformada de Hough para círculos com raio fixo r, qual é a fórmula para encontrar o centro (a, b) a partir de um pixel de borda (x, y)?',
+    options: {
+      a: 'a = x + r·cos(θ), b = y + r·sin(θ)',
+      b: 'a = x·cos(θ) + r, b = y·sin(θ) + r',
+      c: 'a = x - r·cos(θ), b = y - r·sin(θ)',
+      d: 'a = r·cos(θ), b = r·sin(θ)'
+    },
+    correct: 'c',
+    explanation: 'Se (x, y) é um ponto na borda do círculo e (a, b) é o centro, o centro está a distância r do pixel em alguma direção θ: a = x - r·cos(θ) e b = y - r·sin(θ). Varrendo θ de 0° a 359°, traçamos um círculo de raio r ao redor do pixel — o centro real é onde os círculos de vários pixels de borda se cruzam no acumulador.'
+  },
+  {
+    lista: '8',
+    question: 'Por que o acumulador da Transformada de Hough para círculos com raio fixo é 2D, mas com raio variável seria 3D?',
+    options: {
+      a: 'Porque com raio variável a imagem precisa ser processada em 3 canais de cor.',
+      b: 'Com raio fixo os parâmetros livres são só (a, b). Com raio variável, r se torna um terceiro parâmetro livre e o acumulador precisa de um eixo para cada parâmetro desconhecido.',
+      c: 'Porque o raio variável requer FFT 3D para o processamento.',
+      d: 'Com raio variável usamos 3 canais: vermelho para a, verde para b, azul para r.'
+    },
+    correct: 'b',
+    explanation: 'O acumulador tem uma dimensão por parâmetro livre. Com r fixo, só procuramos (a, b) — acumulador 2D. Se r for desconhecido, ele se torna mais um parâmetro a varrer: para cada pixel, varremos todos os θ E todos os r possíveis, incrementando Acu(a, b, r). Isso torna o processo muito mais pesado computacionalmente.'
+  },
+  {
+    lista: '8',
+    question: 'Ao carregar uma imagem PNG 1-bit colormap com imread em Octave, os pixels retornam valores 0 e 1 (não 0 e 255). Qual é o impacto disso na binarização com im_bin = im_gray < 128?',
+    options: {
+      a: 'Nenhum impacto, pois tanto 0 quanto 255 são menores que 128.',
+      b: 'A binarização captura todos os pixels (0 < 128 e 1 < 128), processando a imagem inteira em vez de só as bordas — tornando o código lento e o acumulador sem sentido.',
+      c: 'Apenas os pixels pretos (valor 0) são capturados, funcionando corretamente.',
+      d: 'Octave converte automaticamente de 1-bit para 8-bit antes de aplicar o limiar.'
+    },
+    correct: 'b',
+    explanation: 'Com valores 0 e 1, ambos são menores que 128. Então im_gray < 128 retorna true para TODOS os pixels. O acumulador processa centenas de milhares de pixels desnecessários, tornando o código extremamente lento. A correção é usar == 1 ou ~= 0 dependendo de qual valor representa o objeto de interesse.'
+  },
+  {
+    lista: '8',
+    question: 'Como você calibraria o limiar do acumulador para detectar exatamente as figuras reais de uma imagem, sem falsos positivos?',
+    options: {
+      a: 'Sempre usar limiar = 50, que é o valor padrão da literatura.',
+      b: 'Usar limiar = número de pixels da imagem dividido por 360.',
+      c: 'Rodar com limiar = 1 para ver todos os picos e seus valores, depois escolher um limiar logo acima do ponto onde há uma queda brusca entre picos reais e ruído.',
+      d: 'O limiar ideal é sempre igual ao número de figuras esperadas vezes 10.'
+    },
+    correct: 'c',
+    explanation: 'Figuras reais concentram muitos votos; ruído tem poucos. Rodando com limiar = 1 você vê a lista completa em ordem decrescente. Normalmente há uma queda brusca entre os picos reais e o ruído (ex: 220, 127, 89, 65 → depois 22, 8, 4...). O limiar ideal fica logo acima dessa quebra, capturando só os picos significativos.'
+  }
+];
+
+// =====================================================================
+// GERAÇÃO AUTOMÁTICA DO HTML — não precisa mexer aqui
+// =====================================================================
+let state = { answers: {}, correct: {} };
+let activeQuestions = [];
+const activeListas = new Set(['5', '6', '7', '8']);
+
+function toggleLista(lista) {
+  const btn = document.getElementById(`btn-${lista}`);
+  if (activeListas.has(lista)) {
+    activeListas.delete(lista);
+    btn.className = 'filter-btn';
+  } else {
+    activeListas.add(lista);
+    btn.className = `filter-btn active-${lista}`;
+  }
+}
+
+function startQuiz() {
+  if (activeListas.size === 0) {
+    alert('Selecione pelo menos uma lista!');
+    return;
+  }
+  state = { answers: {}, correct: {} };
+  activeQuestions = shuffle(QUESTIONS.filter(q => activeListas.has(q.lista)));
+  document.getElementById('quiz-root').innerHTML = '';
+  document.getElementById('scorebar').style.display = 'none';
+  document.getElementById('submit-btn').style.display = 'block';
+  buildQuiz();
+  document.getElementById('quiz-root').scrollIntoView({ behavior: 'smooth' });
+}
+
+function buildQuiz() {
+  const root = document.getElementById('quiz-root');
+  const total = activeQuestions.length;
+  activeQuestions.forEach((q, i) => {
+    const n = i + 1;
+    const qid = `q${n}`;
+    const optionsHTML = Object.entries(q.options).map(([key, text]) => `
+      <label class="option" onclick="selectOption('${qid}','${key}',this)">
+        <div class="bubble"></div>
+        <span class="option-text">${text}</span>
+      </label>`).join('');
+
+    root.innerHTML += `
+      <div class="question-card" id="${qid}">
+        <div class="question-label">Questão ${n} de ${total}</div>
+        <span class="tag tag-${q.lista}">Lista ${q.lista}</span>
+        <div class="question-text">${q.question}</div>
+        <div class="options">${optionsHTML}</div>
+        <div class="feedback" id="fb${n}"></div>
+        <button class="check-btn" id="btn${n}" onclick="check('${qid}','${q.correct}',\`${q.explanation}\`)">Verificar</button>
+      </div>`;
+  });
+}
+
+function selectOption(qid, value, el) {
+  if (state.correct[qid]) return;
+  document.querySelectorAll(`#${qid} .option`).forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  state.answers[qid] = value;
+}
+
+function check(qid, correctVal, explanation) {
+  const n = qid.slice(1);
+  const btn = document.getElementById(`btn${n}`);
+  const fb  = document.getElementById(`fb${n}`);
+  const selected = state.answers[qid];
+
+  if (!selected) {
+    fb.textContent = 'Selecione uma alternativa primeiro.';
+    fb.className = 'feedback show wrong-fb';
+    return;
+  }
+
+  state.correct[qid] = correctVal;
+  btn.disabled = true;
+
+  document.querySelectorAll(`#${qid} .option`).forEach(opt => {
+    opt.style.pointerEvents = 'none';
+    const optVal = opt.querySelector('.option-text').closest('label').getAttribute('onclick').match(/'([a-d])'/)[1];
+    if (optVal === correctVal && selected !== correctVal) opt.classList.add('reveal');
+  });
+
+  const chosen = [...document.querySelectorAll(`#${qid} .option`)]
+    .find(o => o.getAttribute('onclick').includes(`'${selected}'`));
+
+  if (selected === correctVal) {
+    chosen.classList.add('correct');
+    fb.innerHTML = `<strong>Correto!</strong> ${explanation}`;
+    fb.className = 'feedback show correct-fb';
+  } else {
+    chosen.classList.add('wrong');
+    fb.innerHTML = `<strong>Incorreto.</strong> ${explanation}`;
+    fb.className = 'feedback show wrong-fb';
+  }
+}
+
+function showScore() {
+  const total = activeQuestions.length;
+  let score = 0;
+  activeQuestions.forEach((q, i) => {
+    const qid = `q${i + 1}`;
+    if (state.answers[qid] && state.correct[qid] && state.answers[qid] === state.correct[qid]) score++;
+  });
+  const nota = (score / total * 10).toFixed(1);
+  const bar = document.getElementById('scorebar');
+  document.getElementById('scorenum').textContent = `${score} / ${total}`;
+  document.getElementById('scorenota').textContent = `Nota: ${nota}`;
+  const msgs = [
+    'Continue estudando, você consegue!',
+    'Está no caminho certo, revise os pontos errados.',
+    'Bom resultado! Revise os detalhes.',
+    'Muito bom! Está bem preparado.',
+    'Perfeito! Domínio completo do conteúdo.'
+  ];
+  document.getElementById('scoremsg').textContent = msgs[Math.floor((score / total) * (msgs.length - 1))];
+  bar.style.display = 'block';
+  bar.scrollIntoView({ behavior: 'smooth' });
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+</script>
+</body>
+</html>
