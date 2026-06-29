@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Animação — Dilatação Morfológica</title>
+  <title>Animação — Morfologia Matemática</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 24px 16px; color: #1a1a2e; }
@@ -19,27 +19,26 @@
       flex: 1;
       min-width: 180px;
       max-width: 260px;
+      overflow: hidden;
     }
-
     .panel h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.07em; color: #888; margin-bottom: 12px; }
     .panel p.desc { font-size: 0.78rem; color: #555; margin-top: 8px; min-height: 36px; line-height: 1.4; }
 
     .grid { display: inline-grid; gap: 3px; }
-
     .cell {
-      width: 40px; height: 40px;
-      border-radius: 6px;
+      width: 36px; height: 36px;
+      border-radius: 5px;
       display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 1rem;
+      font-weight: 700; font-size: 0.9rem;
       transition: background 0.3s, color 0.3s, transform 0.2s;
     }
-
     .cell-0       { background: #e8eaf6; color: #9fa8da; }
     .cell-1       { background: #3949ab; color: #fff; }
-    .cell-hi      { background: #f59e0b; color: #fff; transform: scale(1.08); }   /* recorte ativo */
-    .cell-new     { background: #10b981; color: #fff; transform: scale(1.08); }   /* pixel que acabou de virar 1 */
+    .cell-hi      { background: #f59e0b; color: #fff; transform: scale(1.08); }
+    .cell-new     { background: #10b981; color: #fff; transform: scale(1.08); }
+    .cell-new-ero { background: #f97316; color: #fff; transform: scale(1.08); }
     .cell-se-on   { background: #6c63ff; color: #fff; }
-    .cell-se-cur  { background: #e11d48; color: #fff; transform: scale(1.15); }  /* posição atual no SE */
+    .cell-se-cur  { background: #e11d48; color: #fff; transform: scale(1.15); }
     .cell-se-off  { background: #e2e8f0; color: #94a3b8; }
 
     .step-info {
@@ -53,6 +52,20 @@
     }
     .step-info strong { color: #6c63ff; }
     .step-info code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: 0.85rem; }
+
+    .mode-btns { display: flex; flex-direction: column; align-items: center; gap: 5px; margin-bottom: 20px; }
+    .mode-row  { display: flex; gap: 0; }
+    .mode-btn  {
+      padding: 10px 26px; border: 1px solid #cbd5e1; border-right: none;
+      font-size: 0.88rem; font-weight: 700; cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      background: #e2e8f0; color: #475569;
+    }
+    .mode-btn:last-child { border-right: 1px solid #cbd5e1; }
+    .mode-row:first-child .mode-btn:first-child { border-radius: 8px 0 0 0; }
+    .mode-row:first-child .mode-btn:last-child  { border-radius: 0 8px 0 0; }
+    .mode-row:last-child  .mode-btn:first-child { border-radius: 0 0 0 8px; }
+    .mode-row:last-child  .mode-btn:last-child  { border-radius: 0 0 8px 0; }
 
     .controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
     button {
@@ -73,30 +86,31 @@
 
     .legend { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
     .leg { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #555; }
-    .leg-box { width: 16px; height: 16px; border-radius: 4px; }
+    .leg-box { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; }
   </style>
 </head>
 <body>
 
 <h1 id="mainTitle">Animação — Dilatação Morfológica</h1>
-<p class="subtitle">Imagem 4×4 · Elemento Estruturante 3×3 (todo 1s) · Passo a passo</p>
+<p class="subtitle" id="mainSubtitle">Imagem 6×6 · SE 3×3 (todo 1s) · Operação: OR</p>
 
-<div style="display:flex;justify-content:center;margin-bottom:20px;gap:0">
-  <button id="btnDil" onclick="setMode('dilation')"
-    style="padding:10px 28px;border:none;border-radius:8px 0 0 8px;font-size:0.9rem;font-weight:700;cursor:pointer;background:#3949ab;color:#fff">
-    Dilatação (OR)
-  </button>
-  <button id="btnEro" onclick="setMode('erosion')"
-    style="padding:10px 28px;border:none;border-radius:0 8px 8px 0;font-size:0.9rem;font-weight:700;cursor:pointer;background:#e2e8f0;color:#475569">
-    Erosão (AND)
-  </button>
+<div class="mode-btns">
+  <div class="mode-row">
+    <button class="mode-btn" id="btnDil"   onclick="setMode('dilation')">Dilatação (OR)</button>
+    <button class="mode-btn" id="btnEro"   onclick="setMode('erosion')">Erosão (AND)</button>
+  </div>
+  <div class="mode-row">
+    <button class="mode-btn" id="btnOpen"  onclick="setMode('opening')">Abertura (Erosão → Dilatação)</button>
+    <button class="mode-btn" id="btnClose" onclick="setMode('closing')">Fechamento (Dilatação → Erosão)</button>
+  </div>
 </div>
 
 <div class="legend">
   <div class="leg"><div class="leg-box" style="background:#e8eaf6"></div> Pixel 0</div>
   <div class="leg"><div class="leg-box" style="background:#3949ab"></div> Pixel 1</div>
   <div class="leg"><div class="leg-box" style="background:#f59e0b"></div> Recorte ativo no padding</div>
-  <div class="leg"><div class="leg-box" style="background:#10b981"></div> Pixel que virou 1 agora</div>
+  <div class="leg"><div class="leg-box" style="background:#10b981"></div> Pixel expandido (→1)</div>
+  <div class="leg"><div class="leg-box" style="background:#f97316"></div> Pixel erodido (→0)</div>
   <div class="leg"><div class="leg-box" style="background:#e11d48"></div> Posição atual no SE</div>
 </div>
 
@@ -112,33 +126,33 @@
 <div class="step-info" id="stepInfo">Clique em <strong>Próximo</strong> para começar.</div>
 
 <div class="layout">
-  <div class="panel">
-    <h2>Imagem com Padding (6×6)</h2>
-    <div class="grid" id="gridPadded" style="grid-template-columns: repeat(6, 40px)"></div>
-    <p class="desc" id="descPadded">A imagem original com borda de zeros ao redor.</p>
+  <div class="panel" style="max-width:350px;min-width:350px;">
+    <h2>Imagem com Padding (8×8)</h2>
+    <div class="grid" id="gridPadded" style="grid-template-columns:repeat(8,36px)"></div>
+    <p class="desc" id="descPadded">A imagem com borda ao redor.</p>
   </div>
 
   <div class="panel">
-    <h2>sub_img — Recorte Deslocado (4×4)</h2>
-    <div class="grid" id="gridSub" style="grid-template-columns: repeat(4, 40px)"></div>
+    <h2>sub_img — Recorte Deslocado (6×6)</h2>
+    <div class="grid" id="gridSub" style="grid-template-columns:repeat(6,36px)"></div>
     <p class="desc" id="descSub">O recorte extraído do padding para esta iteração.</p>
   </div>
 
   <div class="panel">
     <h2>Elemento Estruturante (3×3)</h2>
-    <div class="grid" id="gridSE" style="grid-template-columns: repeat(3, 40px)"></div>
+    <div class="grid" id="gridSE" style="grid-template-columns:repeat(3,36px)"></div>
     <p class="desc" id="descSE">Posição atual destacada em vermelho.</p>
   </div>
 
   <div class="panel">
-    <h2>img_out — Resultado Acumulado (4×4)</h2>
-    <div class="grid" id="gridOut" style="grid-template-columns: repeat(4, 40px)"></div>
-    <p class="desc" id="descOut">OR acumulado de todos os recortes até agora.</p>
+    <h2 id="outTitle">img_out — Resultado (OR)</h2>
+    <div class="grid" id="gridOut" style="grid-template-columns:repeat(6,36px)"></div>
+    <p class="desc" id="descOut">OR acumulado de todos os recortes.</p>
   </div>
 </div>
 
 <script>
-const ROWS = 4, COLS = 4, PAD = 1;
+const ROWS = 6, COLS = 6, PAD = 1;
 const PR = ROWS + 2*PAD, PC = COLS + 2*PAD;
 const M = 3, N = 3;
 const CR = Math.floor((M+1)/2) - 1;
@@ -146,17 +160,19 @@ const CC = Math.floor((N+1)/2) - 1;
 const SE = [[1,1,1],[1,1,1],[1,1,1]];
 
 const IMG = [
-  [0,0,0,0],
-  [0,1,1,0],
-  [0,1,1,0],
-  [0,0,0,0]
+  [0,0,0,0,0,0],
+  [0,1,1,1,1,0],
+  [0,1,1,1,1,0],
+  [0,1,1,1,1,0],
+  [0,1,1,1,1,0],
+  [0,0,0,0,0,0]
 ];
 
-let mode = 'dilation'; // 'dilation' | 'erosion'
-let steps = [];
+let mode    = 'dilation';
+let steps   = [];
 let current = 0;
 let playing = false;
-let timer = null;
+let timer   = null;
 
 function dirLabel(dr, dc){
   const v = dr < 0 ? '↑ cima' : dr > 0 ? '↓ baixo' : '';
@@ -165,41 +181,44 @@ function dirLabel(dr, dc){
   return [v,h].filter(Boolean).join(' + ');
 }
 
-function buildSteps(){
-  const isDil = mode === 'dilation';
-  const padVal = isDil ? 0 : 1;          // padding neutro
-  const initVal = isDil ? 0 : 1;         // valor inicial de img_out
-  const op = isDil
-    ? (a, b) => a | b                    // OR para dilatação
-    : (a, b) => a & b;                   // AND para erosão
-  // pixel "mudou" significa: virou 0 na erosão, virou 1 na dilatação
-  const changed = isDil
-    ? (prev, next) => next === 1 && prev === 0
-    : (prev, next) => next === 0 && prev === 1;
+// ── Gera os passos de uma fase (erosão OU dilatação) sobre inputImg ───────────
+function buildPhaseSteps(inputImg, phaseMode, phaseLabel){
+  const isDil    = phaseMode === 'dilation';
+  const padVal   = isDil ? 0 : 1;
+  const initVal  = isDil ? 0 : 1;
+  const op       = isDil ? (a,b) => a|b : (a,b) => a&b;
+  const changed  = isDil
+    ? (p,n) => n===1 && p===0
+    : (p,n) => n===0 && p===1;
+  const opName   = isDil ? 'OR'  : 'AND';
+  const opLabel  = isDil ? 'Dilatação' : 'Erosão';
+  const badgeBg  = isDil ? '#dbeafe' : '#fce7f3';
+  const badgeFg  = isDil ? '#1e40af' : '#be185d';
+  const badge    = phaseLabel
+    ? `<span style="background:${badgeBg};color:${badgeFg};padding:1px 9px;border-radius:12px;font-size:0.77rem;font-weight:700;margin-right:6px">${phaseLabel}</span>`
+    : '';
 
-  // Monta o padding
+  // monta padding
   const PADDED = Array.from({length:PR}, () => Array(PC).fill(padVal));
   for(let r=0;r<ROWS;r++)
     for(let c=0;c<COLS;c++)
-      PADDED[r+PAD][c+PAD] = IMG[r][c];
+      PADDED[r+PAD][c+PAD] = inputImg[r][c];
 
-  steps = [];
-
-  // Passo inicial
+  const phaseSteps = [];
   const initOut = Array.from({length:ROWS}, () => Array(COLS).fill(initVal));
-  steps.push({
+
+  phaseSteps.push({
     type:'init', seR:-1, seC:-1, dr:0, dc:0, sub:null,
-    out: initOut, newPixels: [], padded: PADDED,
-    info: isDil
-      ? `<strong>Estado Inicial — Dilatação</strong><br>
-         img_out começa toda em <code>0</code>. Operação: <strong>OR</strong>. Padding: <code>0</code> (neutro do OR).<br>
-         A cada iteração, um recorte deslocado é extraído e combinado com OR — pixels brancos se expandem.`
-      : `<strong>Estado Inicial — Erosão</strong><br>
-         img_out começa toda em <code>1</code>. Operação: <strong>AND</strong>. Padding: <code>1</code> (neutro do AND).<br>
-         A cada iteração, um recorte deslocado é extraído e combinado com AND — pixels brancos encolhem.`
+    out: initOut, newPixels:[], padded: PADDED,
+    phaseMode, phaseLabel,
+    info: `${badge}<strong>Estado Inicial — ${opLabel}</strong><br>
+      img_out começa toda em <code>${initVal}</code>. Operação: <strong>${opName}</strong>. Padding: <code>${padVal}</code> (neutro do ${opName}).<br>
+      ${isDil
+        ? 'A cada iteração um recorte deslocado é extraído e combinado com OR — pixels brancos se expandem.'
+        : 'A cada iteração um recorte deslocado é extraído e combinado com AND — pixels brancos encolhem.'}`
   });
 
-  let accumulated = initOut.map(r=>r.slice());
+  let acc = initOut.map(r=>r.slice());
 
   for(let r=0;r<M;r++){
     for(let c=0;c<N;c++){
@@ -209,28 +228,31 @@ function buildSteps(){
       const sub = [];
       for(let i=0;i<ROWS;i++){
         const row = [];
-        for(let j=0;j<COLS;j++)
-          row.push(PADDED[i+PAD+dr][j+PAD+dc]);
+        for(let j=0;j<COLS;j++) row.push(PADDED[i+PAD+dr][j+PAD+dc]);
         sub.push(row);
       }
 
-      const prevAcc = accumulated.map(r=>r.slice());
-      const newAcc  = accumulated.map((row,i) => row.map((v,j) => op(v, sub[i][j])));
-      const newPx   = [];
+      const prev = acc.map(r=>r.slice());
+      const next = acc.map((row,i) => row.map((v,j) => op(v, sub[i][j])));
+      const newPx = [];
       for(let i=0;i<ROWS;i++)
         for(let j=0;j<COLS;j++)
-          if(changed(prevAcc[i][j], newAcc[i][j])) newPx.push([i,j]);
+          if(changed(prev[i][j], next[i][j])) newPx.push([i,j]);
+      acc = next;
 
-      accumulated = newAcc;
-      const opName = isDil ? 'OR' : 'AND';
       const changeLabel = isDil
-        ? (newPx.length > 0 ? `<br><span style="color:#10b981;font-weight:700">${newPx.length} pixel(s) expandido(s) para 1.</span>` : '<br>Nenhum pixel novo ativado.')
-        : (newPx.length > 0 ? `<br><span style="color:#e11d48;font-weight:700">${newPx.length} pixel(s) erodido(s) para 0.</span>` : '<br>Nenhum pixel removido nesta iteração.');
+        ? (newPx.length
+            ? `<br><span style="color:#10b981;font-weight:700">${newPx.length} pixel(s) expandido(s) para 1.</span>`
+            : '<br>Nenhum pixel novo ativado.')
+        : (newPx.length
+            ? `<br><span style="color:#e11d48;font-weight:700">${newPx.length} pixel(s) erodido(s) para 0.</span>`
+            : '<br>Nenhum pixel removido nesta iteração.');
 
-      steps.push({
+      phaseSteps.push({
         type:'step', seR:r, seC:c, dr, dc, sub,
-        out: accumulated.map(r=>r.slice()), newPixels: newPx, padded: PADDED,
-        info: `<strong>SE posição (${r+1},${c+1}) de (3,3)</strong> — ativa (valor = 1)<br>
+        out: acc.map(r=>r.slice()), newPixels: newPx, padded: PADDED,
+        phaseMode, phaseLabel,
+        info: `${badge}<strong>SE posição (${r+1},${c+1}) de (3,3)</strong> — ativa (valor = 1)<br>
           Deslocamento: <code>dr = ${r+1}−2 = ${dr>=0?'+':''}${dr}</code>,
           <code>dc = ${c+1}−2 = ${dc>=0?'+':''}${dc}</code>
           → imagem deslocada <strong>${dirLabel(dr,dc)}</strong><br>
@@ -239,34 +261,81 @@ function buildSteps(){
     }
   }
 
-  const total1 = accumulated.flat().filter(v=>v).length;
-  steps.push({
+  const tot = acc.flat().filter(v=>v).length;
+  phaseSteps.push({
     type:'done', seR:-1, seC:-1, dr:0, dc:0, sub:null,
-    out: accumulated.map(r=>r.slice()), newPixels:[], padded: PADDED,
-    info: isDil
-      ? `<strong>Dilatação concluída!</strong><br>
-         Todas as 9 iterações do SE foram aplicadas com OR. O bloco 2×2 expandiu — resultado: ${total1} pixels em 1.`
-      : `<strong>Erosão concluída!</strong><br>
-         Todas as 9 iterações do SE foram aplicadas com AND. O bloco 2×2 encolheu — resultado: ${total1} pixels em 1.`
+    out: acc.map(r=>r.slice()), newPixels:[], padded: PADDED,
+    phaseMode, phaseLabel,
+    info: `${badge}<strong>${opLabel} concluída!</strong><br>
+      Todas as 9 iterações do SE foram aplicadas com ${opName}. ${isDil?'O bloco expandiu':'O bloco encolheu'} — resultado: ${tot} pixel(s) em 1.`
   });
+
+  return { phaseSteps, result: acc };
+}
+
+// ── Monta o array completo de passos para o modo atual ────────────────────────
+function buildSteps(){
+  if(mode === 'dilation' || mode === 'erosion'){
+    steps = buildPhaseSteps(IMG, mode, '').phaseSteps;
+    return;
+  }
+
+  if(mode === 'opening'){
+    const { phaseSteps: p1, result: eroded  } = buildPhaseSteps(IMG,    'erosion',  'Fase 1/2 — Erosão');
+    const { phaseSteps: p2                  } = buildPhaseSteps(eroded, 'dilation', 'Fase 2/2 — Dilatação');
+    const transition = {
+      type:'transition', seR:-1, seC:-1, dr:0, dc:0, sub:null,
+      out: eroded, newPixels:[], padded: p2[0].padded,
+      phaseMode:'dilation', phaseLabel:'Transição',
+      info: `<strong style="color:#0891b2">⟶ Abertura: Fase 1 (Erosão) concluída!</strong><br>
+        A imagem erodida (resultado ao lado) torna-se a nova entrada para a Fase 2.<br>
+        O padding passa a ser <code>0</code> (neutro do OR) para a dilatação. Clique em <strong>Próximo</strong> para continuar.`
+    };
+    steps = [...p1, transition, ...p2];
+    return;
+  }
+
+  if(mode === 'closing'){
+    const { phaseSteps: p1, result: dilated } = buildPhaseSteps(IMG,     'dilation', 'Fase 1/2 — Dilatação');
+    const { phaseSteps: p2                  } = buildPhaseSteps(dilated,  'erosion',  'Fase 2/2 — Erosão');
+    const transition = {
+      type:'transition', seR:-1, seC:-1, dr:0, dc:0, sub:null,
+      out: dilated, newPixels:[], padded: p2[0].padded,
+      phaseMode:'erosion', phaseLabel:'Transição',
+      info: `<strong style="color:#7c3aed">⟶ Fechamento: Fase 1 (Dilatação) concluída!</strong><br>
+        A imagem dilatada (resultado ao lado) torna-se a nova entrada para a Fase 2.<br>
+        O padding passa a ser <code>1</code> (neutro do AND) para a erosão. Clique em <strong>Próximo</strong> para continuar.`
+    };
+    steps = [...p1, transition, ...p2];
+  }
 }
 
 // ── Renderização ──────────────────────────────────────────────────────────────
 function render(){
-  const s = steps[current];
-  const isDil = mode === 'dilation';
+  const s    = steps[current];
+  const isDil = s.phaseMode === 'dilation';
 
-  document.getElementById('stepNum').textContent = current;
+  document.getElementById('stepNum').textContent   = current;
   document.getElementById('stepTotal').textContent = steps.length - 1;
-  document.getElementById('stepInfo').innerHTML = s.info;
+  document.getElementById('stepInfo').innerHTML    = s.info;
   document.getElementById('btnPrev').disabled = current === 0;
   document.getElementById('btnNext').disabled = current === steps.length - 1;
 
-  // Título do painel de resultado
-  document.querySelector('#gridOut').closest('.panel').querySelector('h2').textContent =
-    `img_out — Resultado (${isDil ? 'OR' : 'AND'})`;
-  document.querySelector('#gridOut').closest('.panel').querySelector('.desc').textContent =
-    isDil ? 'OR acumulado de todos os recortes.' : 'AND acumulado de todos os recortes.';
+  // painel de resultado — título dinâmico
+  const outTitle = document.getElementById('outTitle');
+  if(mode === 'dilation'){
+    outTitle.textContent = 'img_out — Resultado (OR)';
+  } else if(mode === 'erosion'){
+    outTitle.textContent = 'img_out — Resultado (AND)';
+  } else if(mode === 'opening'){
+    if(s.type === 'transition')    outTitle.textContent = 'img_ero — Resultado da Fase 1 (Erosão)';
+    else if(isDil)                 outTitle.textContent = 'img_out — Abertura — Fase 2 (OR)';
+    else                           outTitle.textContent = 'img_ero — Fase 1: Erosão (AND)';
+  } else if(mode === 'closing'){
+    if(s.type === 'transition')    outTitle.textContent = 'img_dil — Resultado da Fase 1 (Dilatação)';
+    else if(!isDil)                outTitle.textContent = 'img_out — Fechamento — Fase 2 (AND)';
+    else                           outTitle.textContent = 'img_dil — Fase 1: Dilatação (OR)';
+  }
 
   renderPadded(s);
   renderSub(s);
@@ -292,10 +361,11 @@ function renderPadded(s){
       el.appendChild(d);
     }
 
-  const padVal = mode === 'dilation' ? 0 : 1;
+  const padVal = s.phaseMode === 'dilation' ? 0 : 1;
+  const opName = s.phaseMode === 'dilation' ? 'OR' : 'AND';
   document.getElementById('descPadded').textContent = s.sub !== null
     ? `Recorte laranja começa em linha ${1+PAD+s.dr}, coluna ${1+PAD+s.dc}.`
-    : `Padding preenchido com ${padVal} (neutro do ${mode === 'dilation' ? 'OR' : 'AND'}).`;
+    : `Padding preenchido com ${padVal} (neutro do ${opName}).`;
 }
 
 function renderSub(s){
@@ -304,7 +374,7 @@ function renderSub(s){
   if(!s.sub){
     for(let i=0;i<ROWS*COLS;i++){
       const d = document.createElement('div');
-      d.className='cell cell-0'; d.textContent='—';
+      d.className = 'cell cell-0'; d.textContent = '—';
       el.appendChild(d);
     }
     document.getElementById('descSub').textContent = 'Aguardando primeira iteração.';
@@ -313,7 +383,7 @@ function renderSub(s){
   for(let r=0;r<ROWS;r++)
     for(let c=0;c<COLS;c++){
       const d = document.createElement('div');
-      d.className = 'cell '+(s.sub[r][c]?'cell-1':'cell-0');
+      d.className = 'cell ' + (s.sub[r][c] ? 'cell-1' : 'cell-0');
       d.textContent = s.sub[r][c];
       el.appendChild(d);
     }
@@ -328,11 +398,11 @@ function renderSE(s){
     for(let c=0;c<N;c++){
       const d = document.createElement('div');
       const isCur = r===s.seR && c===s.seC;
-      d.className = 'cell '+(isCur?'cell-se-cur':SE[r][c]?'cell-se-on':'cell-se-off');
+      d.className = 'cell ' + (isCur ? 'cell-se-cur' : SE[r][c] ? 'cell-se-on' : 'cell-se-off');
       d.textContent = SE[r][c];
       el.appendChild(d);
     }
-  document.getElementById('descSE').textContent = s.seR>=0
+  document.getElementById('descSE').textContent = s.seR >= 0
     ? `Posição atual: linha ${s.seR+1}, coluna ${s.seC+1}.`
     : 'Nenhuma posição ativa no momento.';
 }
@@ -345,32 +415,43 @@ function renderOut(s, isDil){
     for(let c=0;c<COLS;c++){
       const d = document.createElement('div');
       const v = s.out[r][c];
-      const isChanged = newSet.has(r+','+c);
-      d.className = 'cell '+(isChanged ? (isDil?'cell-new':'cell-new-ero') : v?'cell-1':'cell-0');
+      const chg = newSet.has(r+','+c);
+      d.className = 'cell ' + (chg ? (isDil ? 'cell-new' : 'cell-new-ero') : v ? 'cell-1' : 'cell-0');
       d.textContent = v;
       el.appendChild(d);
     }
-  const total1 = s.out.flat().filter(v=>v).length;
-  const desc = document.getElementById('gridOut').closest('.panel').querySelector('.desc');
-  desc.textContent = s.type==='done'
-    ? `Resultado final: ${total1} pixel(s) em 1.`
-    : `${isDil?'OR':'AND'} acumulado: ${total1} pixel(s) em 1.`;
+  const tot = s.out.flat().filter(v=>v).length;
+  const descOut = document.getElementById('descOut');
+  if(s.type === 'done')       descOut.textContent = `Resultado final: ${tot} pixel(s) em 1.`;
+  else if(s.type === 'transition') descOut.textContent = `Resultado da fase 1: ${tot} pixel(s) em 1.`;
+  else                        descOut.textContent = `${isDil?'OR':'AND'} acumulado: ${tot} pixel(s) em 1.`;
 }
 
 // ── Controles ─────────────────────────────────────────────────────────────────
+const MODE_CONFIG = {
+  dilation: { label:'Dilatação Morfológica',  subtitle:'Imagem 6×6 · SE 3×3 (todo 1s) · Operação: OR',                                    color:'#3949ab' },
+  erosion:  { label:'Erosão Morfológica',     subtitle:'Imagem 6×6 · SE 3×3 (todo 1s) · Operação: AND',                                   color:'#c0392b' },
+  opening:  { label:'Abertura Morfológica',   subtitle:'Imagem 6×6 · SE 3×3 · Fase 1: Erosão (AND) → Fase 2: Dilatação (OR)',             color:'#0891b2' },
+  closing:  { label:'Fechamento Morfológico', subtitle:'Imagem 6×6 · SE 3×3 · Fase 1: Dilatação (OR) → Fase 2: Erosão (AND)',             color:'#7c3aed' },
+};
+const BTN_MAP = { dilation:'btnDil', erosion:'btnEro', opening:'btnOpen', closing:'btnClose' };
+
 function setMode(m){
   if(playing) togglePlay();
   mode = m;
   buildSteps();
   current = 0;
 
-  const isDil = m === 'dilation';
-  document.getElementById('mainTitle').textContent =
-    isDil ? 'Animação — Dilatação Morfológica' : 'Animação — Erosão Morfológica';
-  document.getElementById('btnDil').style.background = isDil ? '#3949ab' : '#e2e8f0';
-  document.getElementById('btnDil').style.color      = isDil ? '#fff'    : '#475569';
-  document.getElementById('btnEro').style.background = isDil ? '#e2e8f0' : '#c0392b';
-  document.getElementById('btnEro').style.color      = isDil ? '#475569' : '#fff';
+  const cfg = MODE_CONFIG[m];
+  document.getElementById('mainTitle').textContent    = `Animação — ${cfg.label}`;
+  document.getElementById('mainSubtitle').textContent = cfg.subtitle;
+
+  Object.entries(BTN_MAP).forEach(([key, id]) => {
+    const btn = document.getElementById(id);
+    const active = key === m;
+    btn.style.background = active ? MODE_CONFIG[key].color : '#e2e8f0';
+    btn.style.color      = active ? '#fff' : '#475569';
+  });
 
   render();
 }
@@ -381,8 +462,8 @@ function reset() { current = 0; render(); if(playing) togglePlay(); }
 
 function togglePlay(){
   playing = !playing;
-  document.getElementById('btnPlay').textContent = playing ? '⏸ Pausar' : '▶ Auto';
-  document.getElementById('btnPlay').style.background = playing ? '#e11d48' : '#10b981';
+  document.getElementById('btnPlay').textContent        = playing ? '⏸ Pausar' : '▶ Auto';
+  document.getElementById('btnPlay').style.background  = playing ? '#e11d48'  : '#10b981';
   if(playing){
     timer = setInterval(() => {
       if(current < steps.length-1){ current++; render(); }
@@ -392,11 +473,6 @@ function togglePlay(){
     clearInterval(timer);
   }
 }
-
-// célula erodida (virou 0) aparece em laranja
-const style = document.createElement('style');
-style.textContent = '.cell-new-ero { background:#f59e0b !important; color:#fff !important; transform:scale(1.08); }';
-document.head.appendChild(style);
 
 setMode('dilation');
 </script>

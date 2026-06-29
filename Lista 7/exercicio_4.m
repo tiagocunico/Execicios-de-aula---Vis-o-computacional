@@ -8,7 +8,7 @@ addpath(caminho_script);
 
 %% 1. Leitura da Imagem de Teste
 % Esta imagem contém caracteres com pequenas fendas (gaps) de 1 e 2 pixels de largura.
-caminho_img = 'Lista 7/imgs_lista_7/Fig0907(a)(text_gaps_1_and_2_pixels).tif';
+caminho_img = 'Lista 7/imgs_lista_7/Fig0907(a)(text_gaps_1_and_2_pixels).png';
 img_original = imread(caminho_img);
 
 %% 2. Definição do Elemento Estruturante (SE)

@@ -241,10 +241,10 @@ const QUESTIONS = [
     lista: '5',
     question: 'Como você distingue ruído gaussiano de ruído uniforme olhando apenas o histograma da imagem?',
     options: {
-      a: 'O gaussiano forma um bloco plano e o uniforme forma uma curva em sino.',
+      a: 'O gaussiano forma um bloco plano entre dois extremos; o uniforme forma uma curva em sino simétrica em torno do valor médio.',
       b: 'O gaussiano forma uma curva em sino centrada num valor; o uniforme forma um bloco plano com valores equiprováveis.',
-      c: 'Os dois formam a mesma curva, só diferem na largura.',
-      d: 'O gaussiano tem picos em 0 e 255; o uniforme tem pico no centro.'
+      c: 'Os dois formam distribuições simétricas unimodais — a diferença está apenas na largura do pico, não no formato geral da curva.',
+      d: 'O gaussiano apresenta dois picos nas extremidades (0 e 255); o uniforme concentra todos os valores em torno do nível médio da imagem.'
     },
     correct: 'b',
     explanation: 'O ruído gaussiano tem distribuição normal (sino), concentrado em torno de um valor médio. O ruído uniforme distribui a energia igualmente num intervalo, formando o bloco plano no histograma.'
@@ -253,10 +253,10 @@ const QUESTIONS = [
     lista: '5',
     question: 'Entre os filtros de média aritmética, geométrica e harmônica, qual tende a borrar mais a imagem?',
     options: {
-      a: 'Harmônica, pois inverte os valores dos pixels antes de calcular.',
-      b: 'Geométrica, pois multiplica todos os vizinhos.',
+      a: 'Harmônica, pois ao inverter os valores dos pixels antes de calcular, qualquer pixel de alta intensidade domina o resultado e borra bordas com mais intensidade.',
+      b: 'Geométrica, pois ao multiplicar todos os pixels da janela e tirar a raiz, pequenas diferenças de valor são amplificadas, distorcendo bordas com mais intensidade que a soma aritmética.',
       c: 'Aritmética, pois faz a média simples de todos os vizinhos sem distinção, suavizando bordas indiscriminadamente.',
-      d: 'Todas borram igualmente.'
+      d: 'Todas borram com a mesma intensidade, pois operam sobre a mesma janela de vizinhos e produzem o mesmo nível de suavização espacial.'
     },
     correct: 'c',
     explanation: 'A média aritmética soma todos os vizinhos e divide pelo total. Isso inclui pixels muito diferentes do centro no cálculo, espalhando valores abruptamente e borrando as bordas.'
@@ -265,10 +265,10 @@ const QUESTIONS = [
     lista: '5',
     question: 'Por que o filtro de mediana é superior aos filtros de média para remover ruído sal-e-pimenta?',
     options: {
-      a: 'Porque calcula a média apenas dos pixels mais escuros da janela.',
+      a: 'Porque identifica os pixels com valores extremos e calcula a média apenas dos mais escuros, garantindo que picos de ruído branco não influenciem o resultado final.',
       b: 'Porque descarta os valores extremos ao escolher o valor central da janela ordenada, sem espalhar o ruído.',
-      c: 'Porque usa uma janela maior que os filtros de média.',
-      d: 'Porque aplica um limiar antes de calcular.'
+      c: 'Porque a janela da mediana é configurada automaticamente como o dobro do tamanho dos filtros de média, cobrindo área maior e evitando que picos de ruído atinjam o pixel central.',
+      d: 'Porque antes de ordenar os valores da janela, aplica um limiar para zerar pixels com valores 0 ou 255, eliminando o ruído impulsivo diretamente antes mesmo de calcular a mediana.'
     },
     correct: 'b',
     explanation: 'O ruído sal-e-pimenta cria pixels com valores extremos (0 ou 255). A mediana ordena os vizinhos e pega o do meio — os extremos ficam nas pontas da lista e são ignorados. Os filtros de média incluem esses extremos e os espalham pela imagem.'
@@ -277,10 +277,10 @@ const QUESTIONS = [
     lista: '5',
     question: 'No exercício 6 da Lista 5 a filtragem inversa funciona bem, mas no exercício 7 ela falha completamente. O que muda entre os dois exercícios?',
     options: {
-      a: 'O exercício 7 usa uma janela de borramento maior.',
-      b: 'O exercício 7 usa uma imagem diferente.',
+      a: 'O exercício 7 usa uma janela de borramento significativamente maior, reduzindo H nas altas frequências a valores ainda menores e tornando a recuperação pela filtragem inversa imprecisa.',
+      b: 'O exercício 7 aplica a filtragem inversa sobre uma imagem diferente com muito mais bordas e texturas de alta frequência, tornando a recuperação mais sensível a erros do filtro.',
       c: 'O exercício 7 adiciona ruído gaussiano após o borramento, e a divisão por H amplifica esse ruído nas altas frequências de forma catastrófica.',
-      d: 'O exercício 7 não aplica o borramento antes da filtragem inversa.'
+      d: 'O exercício 7 tenta aplicar a filtragem inversa diretamente na imagem original sem borrar antes, e como H não foi calibrado para essa imagem, a divisão produz resultados sem sentido.'
     },
     correct: 'c',
     explanation: 'A filtragem inversa divide G por H no domínio da frequência. O filtro de média H tem valores próximos de zero nas altas frequências. Quando existe ruído N, a equação vira F + N/H — e N dividido por valores perto de zero explode, destruindo a imagem.'
@@ -289,10 +289,10 @@ const QUESTIONS = [
     lista: '5',
     question: 'Por que para estimar o ruído de uma imagem usamos o histograma de uma região homogênea (fundo plano) em vez da imagem inteira?',
     options: {
-      a: 'Porque o histograma da imagem inteira é muito lento de calcular.',
+      a: 'Porque calcular o histograma de uma imagem inteira processa milhões de pixels, tornando o processo computacionalmente ineficiente para estimar variância de ruído em tempo real.',
       b: 'Numa região plana, sem textura, toda variação de intensidade se deve exclusivamente ao ruído — isolando sua assinatura sem misturar com variações da cena.',
-      c: 'Porque o ruído só aparece nas bordas dos objetos, e o fundo não tem bordas.',
-      d: 'Porque regiões com textura têm ruído menor e atrapalhariam o cálculo.'
+      c: 'Porque os sensores de câmera só introduzem ruído nas regiões de transição entre objetos e fundo, sendo o fundo uma região ideal com intensidade perfeitamente constante.',
+      d: 'Porque pixels em regiões texturizadas têm ruído concentrado apenas nas altas frequências, e sua inclusão distorceria a estimativa da variância real do ruído de sensor.'
     },
     correct: 'b',
     explanation: 'Em uma região plana ideal, todos os pixels deveriam ter o mesmo valor. Qualquer variação que aparece ali é causada pelo ruído. Na imagem inteira, a variação de intensidade mistura ruído com textura e bordas dos objetos, tornando impossível separar um do outro.'
@@ -301,10 +301,10 @@ const QUESTIONS = [
     lista: '5',
     question: 'O filtro de média geométrica usa um truque com logaritmo para evitar estouro numérico. Qual é a equivalência matemática usada?',
     options: {
-      a: 'Média Geométrica = log( Soma dos pixels )',
+      a: 'Média Geométrica = log( Soma dos pixels / N ), onde N é o número de pixels na janela',
       b: 'Média Geométrica = exp( Média Aritmética dos log dos pixels )',
-      c: 'Média Geométrica = log( Produto dos pixels ) / N',
-      d: 'Média Geométrica = sqrt( Média Aritmética dos pixels ao quadrado )'
+      c: 'Média Geométrica = log( Produto dos pixels ) / N, aplicando o logaritmo ao produto final antes de dividir pelo número de elementos',
+      d: 'Média Geométrica = ( Soma dos pixels ao quadrado / N )^(1/N), elevando a soma normalizada dos quadrados à potência inversa do total de elementos'
     },
     correct: 'b',
     explanation: 'Calcular 255^25 estoura qualquer variável. O truque: log(a×b) = log(a)+log(b). Então o produto de N pixels vira uma soma de logaritmos. Tirando a média dessa soma e aplicando exp() no final, obtemos a média geométrica sem nunca multiplicar diretamente os valores.'
@@ -313,10 +313,10 @@ const QUESTIONS = [
     lista: '5',
     question: 'Na filtragem inversa do exercício 6, por que é necessário usar um limiar (limiar = 0.05) ao dividir por H?',
     options: {
-      a: 'Para limitar o brilho máximo da imagem recuperada a 5% do valor original.',
+      a: 'Para garantir que os valores da imagem recuperada fiquem limitados a no máximo 5% acima da intensidade máxima original, evitando saturação nos pixels mais brilhantes após a deconvolução.',
       b: 'Para evitar divisão por zero ou por valores muito próximos de zero, que amplificariam o ruído infinitamente nas altas frequências.',
-      c: 'Para remover as baixas frequências da imagem antes da recuperação.',
-      d: 'Para garantir que a FFT seja calculada apenas nas frequências relevantes.'
+      c: 'Para aplicar um filtro passa-alta antes da divisão por H, removendo componentes de baixa frequência que não foram afetadas pelo borramento e que introduzem artefatos na imagem recuperada.',
+      d: 'Para mascarar frequências fora da banda relevante antes do cálculo da FFT, evitando que componentes periféricas do espectro comprometam a precisão do resultado final.'
     },
     correct: 'b',
     explanation: 'O filtro de média H bloqueia as altas frequências, fazendo H ≈ 0 nelas. Dividir qualquer valor por 0 gera infinito. O limiar cria uma máscara: só divide onde |H| > 0.05, ignorando frequências onde H é tão pequeno que a divisão destruiria a imagem.'
@@ -325,10 +325,10 @@ const QUESTIONS = [
     lista: '5',
     question: 'O filtro de média geométrica é bom para remover qual tipo específico de ruído, e por quê é péssimo para o oposto?',
     options: {
-      a: 'Bom para ruído gaussiano; ruim para ruído uniforme.',
+      a: 'Bom para ruído gaussiano porque o log transforma valores altos de forma suave; ruim para ruído uniforme porque a distribuição plana causa inconsistências no produto final da média geométrica.',
       b: 'Bom para ruído "sal" (pixels brancos); ruim para ruído "pimenta" (pixels pretos), pois valores próximos de zero puxam o produto — e a média geométrica — para zero.',
-      c: 'Bom para ruído "pimenta" (pixels pretos); ruim para ruído "sal" (pixels brancos).',
-      d: 'Bom para qualquer tipo de ruído impulsivo.'
+      c: 'Bom para ruído de pimenta (pixels pretos) porque valores próximos de zero têm pouco peso no produto; ruim para ruído de sal (pixels brancos) porque o alto valor eleva o produto e puxa a média geométrica para cima.',
+      d: 'Bom para qualquer ruído impulsivo porque a multiplicação na média geométrica distribui o efeito de valores extremos uniformemente entre todos os pixels da janela, atenuando o impacto de picos isolados.'
     },
     correct: 'b',
     explanation: 'A média geométrica é uma multiplicação. Um pixel branco (valor alto) na janela eleva o produto, mas não tanto. Já um pixel preto (valor ≈ 0) multiplica todo o produto por quase zero, escurecendo dramaticamente aquela região. Por isso funciona para sal mas destrói imagens com pimenta.'
@@ -337,10 +337,10 @@ const QUESTIONS = [
     lista: '5',
     question: 'Por que o filtro de Wiener é superior à filtragem inversa simples quando há ruído na imagem?',
     options: {
-      a: 'Porque o filtro de Wiener usa uma janela maior de pixels.',
+      a: 'Porque o filtro de Wiener analisa uma janela espacial maior ao redor de cada pixel, capturando correlações locais que a filtragem inversa global ignora, tornando a estimativa do sinal original mais precisa.',
       b: 'Porque o filtro de Wiener leva em conta a relação entre a potência do sinal e a potência do ruído, evitando amplificar o ruído nas frequências onde H é pequeno.',
-      c: 'Porque o filtro de Wiener opera no domínio espacial, enquanto a filtragem inversa opera no domínio da frequência.',
-      d: 'Porque o filtro de Wiener não precisa conhecer o filtro H que degradou a imagem.'
+      c: 'Porque o filtro de Wiener realiza toda a recuperação no domínio espacial pixel a pixel, enquanto a filtragem inversa opera globalmente no domínio da frequência onde ruídos locais impactam a imagem inteira.',
+      d: 'Porque o filtro de Wiener é um método cego de deconvolução que estima H diretamente a partir das estatísticas da imagem degradada, sem precisar do conhecimento prévio do filtro que causou o borramento.'
     },
     correct: 'b',
     explanation: 'A filtragem inversa divide por H sem considerar o ruído, amplificando-o catastroficamente onde H ≈ 0. O filtro de Wiener inclui um termo SNR (relação sinal-ruído): quando o ruído é alto em relação ao sinal (SNR baixo), ele atenua a resposta em vez de amplificar — chegando a um compromisso ótimo entre deconvolução e supressão de ruído.'
@@ -349,10 +349,10 @@ const QUESTIONS = [
     lista: '5',
     question: 'O que acontece visualmente com uma imagem ao aplicar um filtro de média aritmética repetidamente várias vezes?',
     options: {
-      a: 'A imagem fica mais nítida a cada iteração.',
-      b: 'A imagem converge para uma imagem com bordas mais marcadas.',
+      a: 'A imagem fica progressivamente mais nítida a cada iteração, pois a média aritmética acumulada funciona como um detector de bordas que reforça transições de intensidade e aumenta o contraste local.',
+      b: 'A imagem converge para uma versão com bordas mais marcadas e ruído reduzido, pois a média repetida elimina variações de alta frequência e amplifica diferenças de intensidade nas regiões de transição.',
       c: 'A imagem progressivamente se torna mais borrada, aproximando-se de uma distribuição gaussiana — pois a média repetida converge para uma convolução com gaussiana pelo Teorema Central do Limite.',
-      d: 'Após 3 aplicações a imagem não muda mais.'
+      d: 'Após exatamente 3 aplicações do filtro de média a imagem atinge estado estacionário, onde todos os pixels se estabilizam e nenhuma iteração adicional produz alteração visível.'
     },
     correct: 'c',
     explanation: 'Pelo Teorema Central do Limite, a convolução repetida de qualquer filtro de média converge para uma gaussiana. Visualmente isso significa borramentos progressivos e uniformes — bordas desaparecem e detalhes finos somem. É por isso que o filtro gaussiano é preferido ao de média quando se quer borramento controlado: ele chega diretamente ao resultado final.'
@@ -361,10 +361,10 @@ const QUESTIONS = [
     lista: '5',
     question: 'Por que o filtro de mediana preserva bordas melhor do que o filtro de média aritmética?',
     options: {
-      a: 'Porque a mediana usa uma janela menor.',
+      a: 'Porque a mediana é calculada sobre uma janela menor que a média aritmética, cobrindo menos pixels de borda e perturbando menos as regiões de transição entre objetos.',
       b: 'Porque a mediana sempre escolhe um pixel que já existe na janela, sem criar valores interpolados — numa borda, o pixel central provavelmente é a mediana de um dos dois lados.',
-      c: 'Porque a mediana aplica um detector de bordas antes de filtrar.',
-      d: 'Porque a mediana pondera pixels próximos ao centro com maior peso.'
+      c: 'Porque antes de ordenar a janela, a mediana aplica internamente um detector de bordas por gradiente para identificar e excluir pixels de transição do cálculo, preservando as bordas automaticamente.',
+      d: 'Porque a mediana aplica pesos gaussianos antes de ordenar os pixels, dando mais importância ao centro da janela e reduzindo o impacto de pixels distantes que pertençam ao outro lado da borda.'
     },
     correct: 'b',
     explanation: 'Numa borda, metade dos pixels da janela pertencem a um lado (ex: valor 200) e metade ao outro (ex: valor 50). A mediana será um pixel real de um dos lados — preservando a borda. A média aritmética somaria os dois lados e produziria um valor intermediário (~125) que não existe na imagem original, "espalhando" a borda por vários pixels.'
@@ -373,10 +373,10 @@ const QUESTIONS = [
     lista: '5',
     question: 'Por que é necessário aplicar zero-padding (preenchimento com zeros) antes de realizar convolução no domínio da frequência usando FFT?',
     options: {
-      a: 'Para aumentar a resolução da FFT e detectar mais frequências.',
-      b: 'Para evitar o efeito de aliasing temporal na transformada.',
+      a: 'Para aumentar a resolução espectral da FFT, permitindo que frequências muito próximas sejam distinguidas e o filtro H seja aplicado com maior precisão em cada componente individual do espectro.',
+      b: 'Para evitar o aliasing temporal causado pela discretização — sem padding, frequências acima de metade da taxa de amostragem dobram sobre as mais baixas, distorcendo o espectro da imagem.',
       c: 'Porque a FFT assume periodicidade — sem padding, as bordas da imagem "envolvem" e criam artefatos de convolução circular nos cantos.',
-      d: 'Para garantir que a imagem tenha dimensões múltiplas de 256.'
+      d: 'Para que as dimensões da imagem sejam múltiplas de 256, já que o algoritmo FFT Cooley-Tukey só opera corretamente com tamanhos que são potências exatas de 2.'
     },
     correct: 'c',
     explanation: 'A FFT implementa convolução circular: trata a imagem como se ela se repetisse infinitamente. Sem padding, o lado direito da imagem "encontra" o lado esquerdo na convolução, gerando artefatos visíveis nas bordas. O zero-padding garante espaço suficiente para que a convolução linear e circular sejam equivalentes.'
@@ -385,10 +385,10 @@ const QUESTIONS = [
     lista: '5',
     question: 'Qual das alternativas descreve corretamente o ruído speckle (granular), comum em imagens de ultrassom e radar?',
     options: {
-      a: 'É um ruído aditivo gaussiano que some com filtros de média.',
+      a: 'É um ruído aditivo com distribuição gaussiana caracterizado por grânulos uniformemente distribuídos, que pode ser atenuado eficientemente com filtros de média por não depender da intensidade local do pixel.',
       b: 'É um ruído multiplicativo: o ruído é proporcional à intensidade local do pixel, então regiões brilhantes ficam mais ruidosas que regiões escuras.',
-      c: 'É idêntico ao ruído sal-e-pimenta, apenas com outro nome.',
-      d: 'É causado exclusivamente por defeitos no sensor da câmera.'
+      c: 'É estatisticamente equivalente ao ruído sal-e-pimenta, mas com valores contínuos — os pixels são corrompidos para qualquer valor no intervalo, não apenas para 0 ou 255.',
+      d: 'É causado por pixels defeituosos permanentes no sensor que ficam travados em valores aleatórios, diferentemente do ruído gaussiano que varia a cada captura por flutuações térmicas.'
     },
     correct: 'b',
     explanation: 'Diferente do ruído aditivo (n_aditivo = sinal + ruído), o speckle é multiplicativo: sinal_ruidoso = sinal × ruído. Isso significa que regiões com alta intensidade sofrem mais ruído que regiões escuras. Filtros de média simples não funcionam bem — o ideal é trabalhar no domínio logarítmico para converter o ruído multiplicativo em aditivo antes de filtrar.'
@@ -397,10 +397,10 @@ const QUESTIONS = [
     lista: '6',
     question: 'Por que converter a imagem de teste de daltonismo para tons de cinza não resolve o problema do daltônico?',
     options: {
-      a: 'Porque daltônicos não enxergam em tons de cinza.',
-      b: 'Porque a conversão para cinza depende apenas do canal azul.',
+      a: 'Porque daltônicos têm sensibilidade reduzida ao canal de luminosidade, e converter para cinza remove exatamente essa informação de brilho que é a única que eles ainda conseguem processar corretamente.',
+      b: 'Porque a fórmula padrão de conversão atribui peso zero ao canal vermelho e quase todo o peso ao canal azul, eliminando justamente a informação de cor que daltônicos precisam para distinguir os números.',
       c: 'Vermelho e verde podem ter a mesma luminosidade, resultando no mesmo tom de cinza e mantendo a informação inacessível.',
-      d: 'Porque a imagem cbt.bmp não tem canal verde.'
+      d: 'Porque a imagem cbt.bmp foi criada sem canal verde intencional, então a conversão para cinza usa apenas os canais vermelho e azul, mantendo a mesma confusão que o daltônico já não conseguia resolver.'
     },
     correct: 'c',
     explanation: 'A conversão para cinza usa uma ponderação de luminosidade (ex: 0.299R + 0.587G + 0.114B). Se um objeto vermelho e um verde tiverem brilho similar, o resultado em cinza será praticamente igual — a distinção de cor se perde por completo.'
@@ -409,10 +409,10 @@ const QUESTIONS = [
     lista: '6',
     question: 'No exercício 2 da Lista 6, como o código separa objetos vermelhos de verdes numericamente?',
     options: {
-      a: 'Converte para HSV e separa pelo canal de matiz (Hue).',
+      a: 'Converte para HSV e aplica limiar no canal H: valores entre 0° e 15° são vermelhos; valores entre 90° e 150° são verdes, ignorando variações de brilho e saturação.',
       b: 'Usa a diferença entre os canais R e G: pixels onde (R - G) > limiar são vermelhos; onde (G - R) > limiar são verdes.',
-      c: 'Compara o canal R com um valor fixo de 128: acima é vermelho, abaixo é verde.',
-      d: 'Usa o canal azul como referência: onde B é baixo, o pixel é vermelho ou verde.'
+      c: 'Compara o canal R de cada pixel com o limiar fixo de 128: pixels com R > 128 são vermelhos e pixels com R < 128 são verdes, independente dos valores de G e B.',
+      d: 'Usa o canal B como discriminador principal: onde B < 50 o pixel pertence a um objeto colorido; em seguida compara R e G para decidir a cor, já que o azul está ausente em ambas.'
     },
     correct: 'b',
     explanation: 'O código calcula mask_vermelho = (R - G) > 15 e mask_verde = (G - R) > 15. A diferença entre canais captura a dominância cromática sem depender do brilho absoluto — por isso funciona mesmo quando os objetos têm luminâncias parecidas, que é exatamente o que confunde o daltônico.'
@@ -421,10 +421,10 @@ const QUESTIONS = [
     lista: '6',
     question: 'O que é protanopia e deuteranopia, e por que ambas causam confusão entre vermelho e verde?',
     options: {
-      a: 'Protanopia é daltonismo total (visão em preto e branco); deuteranopia é sensibilidade reduzida ao azul.',
+      a: 'Protanopia é a forma mais severa de daltonismo causando visão completamente acromática; já a deuteranopia é mais leve e afeta apenas a percepção do azul, mantendo a visão do vermelho e verde intactas.',
       b: 'Protanopia é ausência dos cones sensíveis ao vermelho (L); deuteranopia é ausência dos cones sensíveis ao verde (M). Sem um dos dois, o cérebro não consegue distinguir os dois matizes.',
-      c: 'Protanopia afeta apenas homens; deuteranopia afeta apenas mulheres.',
-      d: 'As duas são o mesmo tipo de daltonismo, apenas com nomenclaturas diferentes para graus de severidade.'
+      c: 'Protanopia é uma condição ligada ao cromossomo X que afeta exclusivamente homens; deuteranopia é autossômica e afeta mulheres com igual frequência, embora ambas causem confusão entre vermelho e verde.',
+      d: 'As duas são variantes do mesmo defeito genético nos fotorreceptores, diferindo apenas na intensidade: protanopia é a forma severa com ausência total de percepção e deuteranopia é a forma leve com percepção reduzida.'
     },
     correct: 'b',
     explanation: 'O olho humano tem 3 tipos de cones: S (azul), M (verde) e L (vermelho). A protanopia é a ausência dos cones L; a deuteranopia, dos cones M. Sem um dos dois, o sinal que o cérebro recebe para distinguir verde de vermelho é ambíguo — ambas as cores produzem resposta similar nos cones restantes.'
@@ -433,10 +433,10 @@ const QUESTIONS = [
     lista: '6',
     question: 'Quais são os três componentes do espaço de cores HSV e o que cada um representa?',
     options: {
-      a: 'H = brilho, S = matiz, V = saturação.',
+      a: 'H = brilho acumulado de todos os canais combinados, S = matiz ou tonalidade dominante do pixel, V = saturação ou vivacidade da cor percebida pelo olho humano.',
       b: 'H = matiz (ângulo da cor no círculo cromático), S = saturação (pureza da cor), V = valor (brilho/luminosidade).',
-      c: 'H = alto contraste, S = suavização, V = variância.',
-      d: 'H = vermelho, S = verde, V = azul reorganizados em ordem de frequência.'
+      c: 'H = índice de contraste calculado entre pixels adjacentes, S = fator de suavização aplicado durante a conversão do espaço de cores, V = variância estatística dos valores dos pixels na vizinhança.',
+      d: 'H = componente vermelho reescalado de 0° a 360°, S = componente verde normalizado pela soma dos três canais, V = componente azul invertido para representar luminosidade em escala decrescente.'
     },
     correct: 'b',
     explanation: 'No HSV: H (Hue) é o ângulo no círculo cromático (0°=vermelho, 120°=verde, 240°=azul); S (Saturation) vai de 0 (cinza) a 1 (cor pura); V (Value) vai de 0 (preto) a 1 (cor máxima). Separar a informação de cor (H) da luminosidade (V) é o grande trunfo do HSV sobre o RGB para segmentação.'
@@ -445,10 +445,10 @@ const QUESTIONS = [
     lista: '6',
     question: 'Por que o espaço HSV é mais robusto que o RGB para segmentação de cores sob diferentes condições de iluminação?',
     options: {
-      a: 'Porque o HSV usa 4 canais enquanto o RGB usa apenas 3.',
+      a: 'Porque o HSV adiciona um quarto canal de transparência além dos três canais de cor, permitindo separar o fundo dos objetos antes mesmo da segmentação por cor.',
       b: 'Porque no HSV a informação de cor (H) está separada da luminosidade (V) — variações de iluminação afetam V mas não mudam H, permitindo segmentar pela cor independente do brilho.',
-      c: 'Porque o HSV comprime a imagem antes de processar.',
-      d: 'Porque o canal S do HSV remove automaticamente o ruído da imagem.'
+      c: 'Porque a conversão para HSV aplica compressão com perdas nos dados de cor, reduzindo o espaço de busca e tornando a limiarização mais rápida e menos sensível ao ruído de sensor.',
+      d: 'Porque o canal S (saturação) do HSV funciona como filtro embutido de ruído — pixels ruidosos têm saturação próxima de zero e são automaticamente descartados antes de avaliar o canal H.'
     },
     correct: 'b',
     explanation: 'No RGB, uma mudança de iluminação afeta R, G e B simultaneamente, tornando difícil definir um limiar fixo para uma cor. No HSV, a mesma cor sob iluminações diferentes mantém o mesmo H — apenas V muda. Por isso um limiar simples no canal H segmenta a cor de forma muito mais robusta que um limiar nos canais RGB.'
@@ -457,10 +457,10 @@ const QUESTIONS = [
     lista: '6',
     question: 'O que é pseudo-coloração de imagens e para que é usada?',
     options: {
-      a: 'É a conversão de imagens coloridas para escala de cinza com alta qualidade.',
+      a: 'É o processo de converter imagens coloridas de alta profundidade para escala de cinza com máxima fidelidade, preservando diferenças de luminosidade original por ponderação perceptual dos canais RGB.',
       b: 'É a atribuição de cores a pixels de uma imagem em tons de cinza usando um mapa de cores, para facilitar a interpretação humana de variações de intensidade.',
-      c: 'É uma técnica para corrigir cores em imagens de câmeras com defeito.',
-      d: 'É o processo de misturar duas imagens coloridas em uma só.'
+      c: 'É uma técnica de pós-processamento que corrige distorções cromáticas causadas por sensores defeituosos, remapeando valores de cada canal para compensar o desvio sistemático do hardware.',
+      d: 'É a combinação de duas ou mais imagens coloridas em uma única imagem resultante, usando tabelas de mistura onde cada pixel final é interpolação ponderada dos pixels das imagens originais.'
     },
     correct: 'b',
     explanation: 'O olho humano distingue muito mais variações de cor do que de cinza — conseguimos diferenciar milhares de cores mas apenas ~200 tons de cinza. A pseudo-coloração aplica um mapa de cores (colormap) a imagens em escala de cinza para tornar diferenças sutis de intensidade imediatamente visíveis. É amplamente usada em imagens médicas, termografia e visualização científica.'
@@ -469,10 +469,10 @@ const QUESTIONS = [
     lista: '6',
     question: 'Por que usar apenas o canal R (vermelho) para detectar pixels vermelhos no RGB não é suficiente?',
     options: {
-      a: 'Porque o canal R não existe em imagens JPEG.',
+      a: 'Porque imagens JPEG usam o espaço de cores YCbCr internamente e, após a compressão, o canal vermelho fica misturado com outros componentes, tornando impossível extraí-lo isoladamente para segmentação.',
       b: 'Porque pixels brancos (R=255, G=255, B=255) e amarelos (R=255, G=255, B=0) também têm R alto — a diferença (R-G) ou conversão para HSV é necessária para isolar o vermelho puro.',
-      c: 'Porque o canal R é sempre igual ao canal G em imagens naturais.',
-      d: 'Porque o canal R sozinho não tem resolução suficiente para segmentação.'
+      c: 'Porque em imagens naturais fotografadas sob luz natural, os canais R e G têm valores muito similares para a maioria dos pixels, tornando qualquer limiar baseado apenas em R incapaz de distinguir vermelho de outras cores quentes.',
+      d: 'Porque o canal R é quantizado em apenas 8 bits, representando granularidade insuficiente para definir um limiar preciso que separe vermelho puro de tonalidades como laranja e rosa em imagens naturais.'
     },
     correct: 'b',
     explanation: 'Pixels brancos têm R=255 mas não são vermelhos. Pixels amarelos também têm R alto. Para detectar vermelho puro precisamos que R seja alto E G seja baixo. A diferença (R-G) > limiar captura essa condição: vermelho puro tem R alto e G baixo; branco e amarelo têm G alto, então a diferença é pequena e não ultrapassa o limiar.'
@@ -481,10 +481,10 @@ const QUESTIONS = [
     lista: '6',
     question: 'Como a iluminação da cena afeta a detecção de cor no espaço RGB e como minimizar esse problema?',
     options: {
-      a: 'A iluminação não afeta o RGB pois a câmera compensa automaticamente.',
+      a: 'A iluminação não afeta o RGB em câmeras modernas, pois o processador ISP aplica correção automática de balanço de branco e normalização de exposição antes de gravar os valores RGB finais na imagem.',
       b: 'Iluminação forte aumenta todos os canais proporcionalmente; iluminação fraca os diminui — o mesmo objeto pode ter valores RGB completamente diferentes sob luz diferente, dificultando limiarização fixa.',
-      c: 'Apenas o canal B é afetado pela iluminação; R e G são estáveis.',
-      d: 'A solução é sempre aplicar um filtro de mediana antes da segmentação.'
+      c: 'Apenas o canal B sofre variação significativa com mudanças de iluminação, pois a temperatura de cor das fontes de luz naturais altera predominantemente o componente azul; os canais R e G permanecem relativamente estáveis.',
+      d: 'A solução ideal é pré-processar a imagem com filtro de mediana 5×5, que remove variações de iluminação tratando-as como ruído impulsivo antes de aplicar qualquer limiar nos canais RGB.'
     },
     correct: 'b',
     explanation: 'Uma bola vermelha sob luz forte pode ter RGB=(230,40,40); sob luz fraca, RGB=(80,15,15). Ambas são vermelhas, mas um limiar fixo em R>150 detectaria apenas a primeira. Soluções: (1) normalizar RGB dividindo cada canal pela soma R+G+B; (2) converter para HSV e usar o canal H, que é invariante à luminosidade; (3) usar iluminação controlada no ambiente.'
@@ -505,10 +505,10 @@ const QUESTIONS = [
     lista: '7',
     question: 'Por que a abertura não fecha as fendas do texto, mas o fechamento consegue?',
     options: {
-      a: 'A abertura usa um elemento estruturante menor que o fechamento.',
+      a: 'A abertura usa um SE propositalmente menor que o fechamento, de modo que sua erosão inicial é mais sutil e não destrói as pontes de conexão entre as letras do texto.',
       b: 'Na abertura a erosão roda primeiro e aumenta as fendas; no fechamento a dilatação roda primeiro e preenche as fendas antes da erosão restaurar o contorno.',
-      c: 'A abertura só funciona em imagens coloridas.',
-      d: 'O fechamento aplica a operação mais vezes que a abertura.'
+      c: 'A abertura é uma operação restrita a imagens coloridas, pois depende de gradientes de intensidade para delimitar as regiões a erodir; em imagens binárias ela não consegue distinguir fendas de bordas legítimas.',
+      d: 'O fechamento repete internamente a dilatação duas vezes antes de aplicar uma única erosão, garantindo que mesmo fendas largas entre letras sejam completamente preenchidas antes da etapa de restauração de contorno.'
     },
     correct: 'b',
     explanation: 'Abertura = Erosão → Dilatação. A erosão amplia os gaps e a dilatação só restaura o que restou. Fechamento = Dilatação → Erosão. A dilatação cria pontes sólidas nos gaps; a erosão encolhe de volta mas as pontes sobrevivem.'
@@ -517,10 +517,10 @@ const QUESTIONS = [
     lista: '7',
     question: 'Por que o padding da erosão é preenchido com 1 (true) enquanto o da dilatação é preenchido com 0 (false)?',
     options: {
-      a: 'É uma convenção arbitrária sem efeito prático.',
+      a: 'É apenas uma convenção histórica estabelecida pelos primeiros implementadores de morfologia matemática, sem qualquer impacto no resultado — ambos os valores de padding produzem resultados idênticos na prática.',
       b: 'Na erosão, padding 0 faria as bordas da imagem serem erodidas como se houvesse pixels pretos ao redor. Na dilatação, padding 1 expandiria objetos a partir do nada fora dos limites.',
-      c: 'O padding da erosão precisa ser 1 para aumentar o tamanho da imagem de saída.',
-      d: 'O padding apenas serve para evitar erros de índice e o valor não importa.'
+      c: 'O padding da erosão é preenchido com 1 para que a imagem de saída seja maior que a entrada — cada borda adiciona uma faixa de pixels com valor 1 que não serão erodidos, preservando o tamanho original da imagem.',
+      d: 'O padding serve apenas para evitar erros de índice quando o SE ultrapassa as bordas da imagem; o valor (0 ou 1) não tem significado morfológico e não afeta o resultado nas regiões internas da imagem.'
     },
     correct: 'b',
     explanation: 'O valor do padding precisa ser o elemento neutro da operação. AND com 1 não afeta o resultado (neutro da erosão). OR com 0 não afeta o resultado (neutro da dilatação). Usar o valor errado distorceria o comportamento nas bordas da imagem.'
@@ -529,10 +529,10 @@ const QUESTIONS = [
     lista: '7',
     question: 'Qual operação morfológica você usaria para remover pequenos pontos de ruído isolados (sem afetar os objetos maiores) e por quê?',
     options: {
-      a: 'Fechamento, pois preenche os buracos deixados pelo ruído.',
-      b: 'Dilatação, pois expande os objetos e encobre o ruído ao redor.',
+      a: 'Fechamento, pois ao dilatar primeiro e depois erodir, os buracos criados pelos pontos de ruído entre objetos são completamente preenchidos antes que a erosão restaure os contornos originais dos objetos maiores.',
+      b: 'Dilatação, pois ao expandir os objetos maiores em todas as direções, eles passam a ocupar o espaço onde os pontos de ruído isolados estavam, efetivamente incorporando e eliminando o ruído pela sobreposição.',
       c: 'Abertura, pois a erosão elimina os pontos pequenos e a dilatação subsequente restaura o tamanho dos objetos grandes que sobreviveram.',
-      d: 'Erosão simples, pois encolhe tudo uniformemente incluindo o ruído.'
+      d: 'Erosão simples, pois ao reduzir todos os objetos proporcionalmente ao tamanho do SE, os pontos de ruído menores que o SE são completamente eliminados enquanto os objetos maiores, embora reduzidos, permanecem na imagem.'
     },
     correct: 'c',
     explanation: 'A abertura (erosão → dilatação) é a ferramenta certa: a erosão destrói os pontos pequenos que não cabem dentro do elemento estruturante, enquanto os objetos grandes apenas encolhem. A dilatação seguinte os restaura ao tamanho original. Os pontinhos de ruído, já destruídos, não voltam.'
@@ -541,10 +541,10 @@ const QUESTIONS = [
     lista: '7',
     question: 'Como se extrai morfologicamente a borda de um objeto binário?',
     options: {
-      a: 'Aplicando dilatação seguida de abertura.',
+      a: 'Aplicando dilatação seguida de abertura com o mesmo SE: a dilatação expande o objeto em uma camada e a abertura remove os pixels adicionados que não pertencem ao interior sólido do objeto.',
       b: 'Subtraindo a imagem erodida da imagem original: borda = original − erosão(original).',
-      c: 'Aplicando fechamento e depois subtraindo a imagem original.',
-      d: 'Usando hit-or-miss com um elemento estruturante em forma de cruz.'
+      c: 'Aplicando fechamento com SE pequeno e depois subtraindo a imagem original do resultado: o fechamento preenche os buracos na borda e a subtração revela apenas os pixels adicionados pelo fechamento.',
+      d: 'Usando a transformada hit-or-miss com SE em forma de cruz 3×3, que detecta especificamente pixels de borda procurando padrões onde o centro está preenchido mas pelo menos um braço da cruz está vazio.'
     },
     correct: 'b',
     explanation: 'A erosão "encolhe" o objeto, removendo uma camada de pixels da borda. Ao subtrair a imagem erodida da original (borda = original − erosão), sobram exatamente os pixels que foram removidos pela erosão — ou seja, a borda do objeto. O tamanho da borda extraída depende do tamanho do elemento estruturante.'
@@ -553,10 +553,10 @@ const QUESTIONS = [
     lista: '7',
     question: 'Como a forma do elemento estruturante (SE) afeta o resultado das operações morfológicas?',
     options: {
-      a: 'A forma não importa; só o tamanho do SE afeta o resultado.',
+      a: 'A forma não afeta o resultado morfológico porque tanto erosão quanto dilatação dependem apenas do número de pixels ativos no SE, não de sua disposição espacial — SEs com o mesmo número de pixels produzem resultados idênticos.',
       b: 'Um SE circular erosiona igualmente em todas as direções; um SE retangular horizontal erosiona mais nas horizontais do que nas verticais — a forma define a geometria do que é preservado ou removido.',
-      c: 'SEs maiores sempre produzem melhores resultados independente da forma.',
-      d: 'A forma só importa na dilatação, não na erosão.'
+      c: 'SEs maiores em qualquer formato produzem resultados superiores porque cobrem área maior de análise, tornando as operações mais robustas ao ruído e garantindo que estruturas de qualquer tamanho sejam corretamente processadas.',
+      d: 'A forma do SE só tem impacto visível na dilatação, pois ela expande o objeto em direções guiadas pela geometria do SE; na erosão, o SE atua como critério de inclusão binário onde apenas o tamanho determina quais pixels sobrevivem.'
     },
     correct: 'b',
     explanation: 'O SE define a "vizinhança" que a operação considera. Um SE de linha horizontal detecta e preserva estruturas horizontais; um SE circular trata todas as direções igualmente. Por exemplo, para remover linhas verticais de uma imagem sem afetar as horizontais, usa-se um SE horizontal. Escolher a forma certa do SE é tão importante quanto escolher a operação.'
@@ -565,10 +565,10 @@ const QUESTIONS = [
     lista: '7',
     question: 'O que é o gradiente morfológico e o que ele detecta em uma imagem?',
     options: {
-      a: 'É a diferença entre erosão e abertura, usada para detectar texturas.',
+      a: 'É a diferença entre erosão e abertura: erosão(img) − abertura(img). Como a abertura sempre remove mais que a erosão sozinha, a diferença destaca texturas que sobrevivem à erosão mas são eliminadas pelo processo completo de abertura.',
       b: 'É a diferença entre dilatação e erosão da imagem: gradiente = dilatação − erosão. Realça as bordas dos objetos, similar ao gradiente de Sobel mas baseado em morfologia.',
-      c: 'É a aplicação sequencial de abertura e fechamento para suavizar bordas.',
-      d: 'É o mesmo que o laplaciano morfológico, aplicado para detectar cantos.'
+      c: 'É o resultado de aplicar abertura seguida de fechamento com o mesmo SE, combinando operações complementares para suavizar bordas irregulares e preencher lacunas sem alterar o tamanho geral dos objetos.',
+      d: 'É calculado como dilatação(img) + erosão(img) − 2·img, detectando especificamente cantos e pontos de curvatura máxima nos contornos dos objetos, de forma análoga ao operador laplaciano em processamento de sinais.'
     },
     correct: 'b',
     explanation: 'O gradiente morfológico calcula dilatação(img) − erosão(img). A dilatação expande e a erosão contrai o objeto — a diferença entre as duas resulta em uma imagem onde apenas as bordas (a região onde expansão e contração diferem) têm valores altos. É análogo ao gradiente de primeira ordem em processamento de sinais, mas robusto ao ruído por usar operações de máximo/mínimo.'
@@ -577,10 +577,10 @@ const QUESTIONS = [
     lista: '7',
     question: 'O que é a transformada Top-Hat e para que problema ela é a solução ideal?',
     options: {
-      a: 'É uma transformada para detectar objetos com formato de chapéu em imagens.',
+      a: 'É uma transformada morfológica especializada em detectar objetos com perfil cônico — regiões com pico central e bordas descendentes — comuns em microscopia de fluorescência e imagens de partículas esféricas.',
       b: 'White Top-Hat = original − abertura. Extrai objetos menores que o SE que foram removidos pela abertura — ideal para detectar detalhes brilhantes sobre fundo não-uniforme.',
-      c: 'É uma versão morfológica da FFT para análise de frequência.',
-      d: 'É a diferença entre fechamento e abertura, usada para equalizar o histograma.'
+      c: 'É a versão morfológica da transformada de Fourier, substituindo senos e cossenos por elementos estruturantes para decompor a imagem em componentes de diferentes escalas e analisar distribuição de texturas.',
+      d: 'É calculada como fechamento(img) − abertura(img), combinando operações duais para criar uma máscara que equaliza o histograma e redistribui as intensidades de forma mais uniforme em toda a faixa dinâmica.'
     },
     correct: 'b',
     explanation: 'A abertura remove objetos menores que o SE. O White Top-Hat (original − abertura) recupera exatamente esses objetos removidos. Isso é poderoso para imagens com iluminação não-uniforme: a abertura com SE grande modela o fundo lentamente variável, e o Top-Hat subtrai esse fundo, deixando apenas os detalhes finos e brilhantes — como células em microscopia ou defeitos em superfícies industriais.'
@@ -589,10 +589,10 @@ const QUESTIONS = [
     lista: '7',
     question: 'Como você verificaria se sua implementação de erosão está correta usando um caso simples?',
     options: {
-      a: 'Aplicar a erosão em uma imagem toda branca e verificar se ela continua toda branca.',
+      a: 'Aplicar a erosão em uma imagem completamente branca e verificar se o resultado é uma imagem completamente branca — pois se todos os pixels são 1, o AND de qualquer SE com vizinhos todos 1 é sempre 1.',
       b: 'Aplicar a erosão com um SE 1×1 (um único pixel) e verificar se a imagem de saída é idêntica à entrada — pois um SE de tamanho 1 não deve alterar nada.',
-      c: 'Comparar o histograma da imagem antes e depois da erosão.',
-      d: 'Aplicar erosão seguida de dilatação e verificar se o resultado é igual à abertura.'
+      c: 'Comparar os histogramas da imagem original e da imagem erodida: a erosão converte pixels brancos em pretos, então o histograma deve mostrar transferência de massa do bin 255 para o bin 0 proporcional ao tamanho do SE.',
+      d: 'Aplicar erosão seguida de dilatação com o mesmo SE e verificar se o resultado coincide exatamente com a abertura calculada pela função nativa — se coincidirem, erosão e dilatação estão corretas e consistentes entre si.'
     },
     correct: 'b',
     explanation: 'Um SE 1×1 contém apenas o pixel central — todos os pixels "concordam" trivialmente com ele (AND com um único pixel é sempre o próprio pixel). Portanto a erosão com SE 1×1 deve retornar a imagem original inalterada. É um teste de sanidade rápido: se a saída difere da entrada, há um bug na implementação (provavelmente no índice central do SE ou no padding).'
@@ -601,10 +601,10 @@ const QUESTIONS = [
     lista: '8',
     question: 'O que representa cada curva desenhada no espaço de Hough para a detecção de retas?',
     options: {
-      a: 'Todas as retas possíveis que passam pela origem da imagem.',
+      a: 'Todas as retas possíveis que passam pela origem do sistema de coordenadas, variando apenas o ângulo de inclinação — o que limita a representação a retas com intercepto zero no espaço original.',
       b: 'Todas as combinações de ângulo e distância que formam uma reta passando por aquele pixel.',
-      c: 'A reta detectada após o processamento completo da imagem.',
-      d: 'O gradiente de intensidade ao redor daquele pixel.'
+      c: 'A reta final detectada após integrar os votos de todos os pixels processados, representando o resultado consolidado da transformada para aquele pixel depois de todos os outros contribuírem com seus votos.',
+      d: 'O vetor gradiente de intensidade calculado ao redor do pixel pela máscara de Sobel, indicando direção e magnitude da variação de brilho local que determina quais ângulos θ são mais prováveis para a reta naquele ponto.'
     },
     correct: 'b',
     explanation: 'Para cada pixel (x, y) da imagem, existem infinitas retas que passam por ele — cada uma com um ângulo θ e uma distância ρ diferentes. A curva no espaço de Hough representa todas essas possibilidades. Onde as curvas de vários pixels se cruzam, é porque todos concordam em uma mesma reta: esse é o pico do acumulador.'
@@ -613,10 +613,10 @@ const QUESTIONS = [
     lista: '8',
     question: 'Por que a representação slope-intercept (y = ax + b) falha para detectar retas verticais na Transformada de Hough?',
     options: {
-      a: 'Porque retas verticais não existem em imagens digitais.',
-      b: 'Porque o acumulador não tem espaço suficiente para armazenar valores grandes.',
+      a: 'Porque a discretização da imagem em pixels quadrados impede retas perfeitamente verticais — qualquer linha quase-vertical aparece como degraus em zigue-zague, que a transformada interpreta como múltiplas retas inclinadas.',
+      b: 'Porque o acumulador é alocado com tamanho fixo baseado nas dimensões da imagem, e retas verticais produzem valores de intercepto b que excedem o tamanho máximo alocado, causando acesso a posições inválidas na memória.',
       c: 'Porque tan(90°) = infinito, fazendo b = y - tan(90°)·x explodir e sair de qualquer índice válido.',
-      d: 'Porque retas verticais têm b = 0, o que é um índice inválido em Octave.'
+      d: 'Porque retas verticais resultam sempre em b = 0 independente de sua posição horizontal, e como Octave indexa arrays a partir de 1, o índice 0 é inválido e causa erro de execução ao tentar incrementar o acumulador.'
     },
     correct: 'c',
     explanation: 'Na forma y = ax + b, o slope a = tan(θ). Quando θ = 90° (reta vertical), tan(90°) = infinito. O cálculo de b = y - infinito·x resulta em -infinito, que não pode ser armazenado em nenhuma posição do acumulador. A forma polar ρ = x·cos(θ) + y·sin(θ) resolve isso porque cos e sin nunca explodem.'
@@ -637,10 +637,10 @@ const QUESTIONS = [
     lista: '8',
     question: 'Por que precisamos de um offset ao calcular b = y - tan(θ)·x na versão slope-intercept?',
     options: {
-      a: 'Porque Octave não aceita índices maiores que 255.',
+      a: 'Porque o acumulador é implementado como matriz uint8 que só comporta valores de 0 a 255, e sem o offset os índices negativos de b causariam overflow silencioso corrompendo posições erradas do acumulador.',
       b: 'Porque b pode ser negativo (ex: b = 200 - tan(30°)·683 = -141) e matrizes em Octave só aceitam índices positivos.',
-      c: 'Porque o offset normaliza b para ficar entre 0 e 1.',
-      d: 'Para garantir que todos os pixels tenham o mesmo peso no acumulador.'
+      c: 'Porque o offset divide todos os valores de b pelo intervalo máximo possível, normalizando-os para o intervalo [0, 1] antes de armazená-los no acumulador e padronizando-o independente do tamanho da imagem.',
+      d: 'Para que cada pixel contribua com exatamente um voto por θ no acumulador sem que sua posição geográfica na imagem influencie o peso da contribuição — o offset redistribui os votos uniformemente ao longo do acumulador.'
     },
     correct: 'b',
     explanation: 'Para um pixel na coluna j = 683 e θ = 30°, temos b = 200 - 0.577·683 ≈ -194. Como índices de matriz em Octave começam em 1, -194 é inválido. O offset (= im_x) é somado a todo b calculado, deslocando o range de valores negativos para positivos. O acumulador precisa ser maior para acomodar esse deslocamento.'
@@ -649,10 +649,10 @@ const QUESTIONS = [
     lista: '8',
     question: 'O que significa um pico (valor alto) no acumulador da Transformada de Hough?',
     options: {
-      a: 'Que aquela região da imagem tem alto contraste.',
+      a: 'Que os pixels ao redor daquela posição apresentam alta variação de intensidade, indicando uma região de transição brusca interpretada pelo algoritmo de Sobel como borda durante o pré-processamento.',
       b: 'Que muitos pixels da imagem "votaram" para aquele conjunto de parâmetros, indicando uma reta ou círculo real.',
-      c: 'Que o algoritmo encontrou uma borda usando o filtro de Sobel.',
-      d: 'Que aquela posição do acumulador overflow e precisa ser reiniciada.'
+      c: 'Que o filtro de Sobel detectou uma borda naquela região e marcou os pixels para votação — o pico no acumulador reflete então a borda encontrada pelo Sobel, não a figura geométrica real na imagem.',
+      d: 'Que o contador naquela posição atingiu o valor máximo permitido pelo tipo de dado (overflow de uint16 em 65535) e precisa ser zerado antes que votos adicionais continuem o processo de detecção.'
     },
     correct: 'b',
     explanation: 'O acumulador funciona como uma votação: cada pixel processa os parâmetros possíveis e incrementa a posição correspondente. Se muitos pixels concordam nos mesmos parâmetros (θ e ρ para uma reta, ou a e b para um círculo), o acumulador nessa posição acumula muitos votos — indicando uma figura geométrica real na imagem.'
@@ -661,10 +661,10 @@ const QUESTIONS = [
     lista: '8',
     question: 'Por que após encontrar um pico no acumulador zeramos uma região ao redor dele antes de buscar o próximo?',
     options: {
-      a: 'Para liberar memória RAM e acelerar o processamento.',
+      a: 'Para liberar a memória RAM alocada para aquela região e reduzir o tempo de processamento, já que um acumulador parcialmente zerado requer menos comparações para encontrar o próximo máximo.',
       b: 'Para evitar que a mesma reta seja detectada múltiplas vezes em iterações seguintes.',
-      c: 'Para normalizar o acumulador antes da próxima busca.',
-      d: 'Porque o acumulador só pode ter um pico por vez.'
+      c: 'Para normalizar os valores restantes do acumulador antes de continuar a busca, garantindo que votos remanescentes sejam comparados em escala relativa e não influenciados pela densidade do pico anterior.',
+      d: 'Porque o algoritmo de busca de máximo retorna apenas um índice por chamada, e enquanto o pico anterior existir no acumulador, qualquer nova busca retornaria o mesmo pico já detectado em vez do seguinte.'
     },
     correct: 'b',
     explanation: 'Um pico real no acumulador tem muitos votos concentrados. Se não zerássemos a região ao redor, a próxima iteração encontraria os vizinhos desse mesmo pico (com poucos votos a menos) e reportaria a mesma reta de novo. Zerando o entorno, forçamos o algoritmo a procurar o próximo pico independente.'
@@ -685,10 +685,10 @@ const QUESTIONS = [
     lista: '8',
     question: 'Por que o acumulador da Transformada de Hough para círculos com raio fixo é 2D, mas com raio variável seria 3D?',
     options: {
-      a: 'Porque com raio variável a imagem precisa ser processada em 3 canais de cor.',
+      a: 'Porque com raio variável o algoritmo precisa converter a imagem para RGB e processar cada canal separadamente, resultando em 3 acumuladores 2D — um por canal — que são depois combinados para encontrar os centros.',
       b: 'Com raio fixo os parâmetros livres são só (a, b). Com raio variável, r se torna um terceiro parâmetro livre e o acumulador precisa de um eixo para cada parâmetro desconhecido.',
-      c: 'Porque o raio variável requer FFT 3D para o processamento.',
-      d: 'Com raio variável usamos 3 canais: vermelho para a, verde para b, azul para r.'
+      c: 'Porque a versão com raio variável realiza a votação no domínio da frequência usando FFT tridimensional — uma dimensão para cada eixo espacial mais uma para os valores de raio — equivalente a uma correlação cruzada volumétrica.',
+      d: 'Com raio variável o acumulador é dividido em 3 canais independentes: vermelho armazena votos para o parâmetro a (centro x), verde para b (centro y) e azul para r (raio), combinados ao final pela transformada inversa.'
     },
     correct: 'b',
     explanation: 'O acumulador tem uma dimensão por parâmetro livre. Com r fixo, só procuramos (a, b) — acumulador 2D. Se r for desconhecido, ele se torna mais um parâmetro a varrer: para cada pixel, varremos todos os θ E todos os r possíveis, incrementando Acu(a, b, r). Isso torna o processo muito mais pesado computacionalmente.'
@@ -697,10 +697,10 @@ const QUESTIONS = [
     lista: '8',
     question: 'Ao carregar uma imagem PNG 1-bit colormap com imread em Octave, os pixels retornam valores 0 e 1 (não 0 e 255). Qual é o impacto disso na binarização com im_bin = im_gray < 128?',
     options: {
-      a: 'Nenhum impacto, pois tanto 0 quanto 255 são menores que 128.',
+      a: 'Nenhum impacto prático: apesar dos valores serem 0 e 1, a condição im_gray < 128 continua funcionando pois apenas o valor 0 satisfaz o limiar e os pixels do objeto (valor 1) são corretamente detectados como bordas.',
       b: 'A binarização captura todos os pixels (0 < 128 e 1 < 128), processando a imagem inteira em vez de só as bordas — tornando o código lento e o acumulador sem sentido.',
-      c: 'Apenas os pixels pretos (valor 0) são capturados, funcionando corretamente.',
-      d: 'Octave converte automaticamente de 1-bit para 8-bit antes de aplicar o limiar.'
+      c: 'Apenas os pixels com valor 0 (pretos) satisfazem a condição, pois neste caso específico os pixels brancos (valor 1) representam o fundo e os pretos (valor 0) são as bordas de interesse — funcionando corretamente ao contrário.',
+      d: 'Octave detecta automaticamente imagens com colormap 1-bit e remapeia os valores 0 e 1 para 0 e 255 antes de qualquer operação, garantindo que o limiar de 128 funcione corretamente para separar fundo de objeto.'
     },
     correct: 'b',
     explanation: 'Com valores 0 e 1, ambos são menores que 128. Então im_gray < 128 retorna true para TODOS os pixels. O acumulador processa centenas de milhares de pixels desnecessários, tornando o código extremamente lento. A correção é usar == 1 ou ~= 0 dependendo de qual valor representa o objeto de interesse.'
@@ -709,10 +709,10 @@ const QUESTIONS = [
     lista: '8',
     question: 'Como você calibraria o limiar do acumulador para detectar exatamente as figuras reais de uma imagem, sem falsos positivos?',
     options: {
-      a: 'Sempre usar limiar = 50, que é o valor padrão da literatura.',
-      b: 'Usar limiar = número de pixels da imagem dividido por 360.',
+      a: 'Sempre iniciar com limiar = 50, padrão estabelecido na literatura para imagens 512×512, ajustando proporcionalmente para outras resoluções multiplicando por (largura × altura) / (512 × 512).',
+      b: 'Usar limiar = total de pixels de borda dividido por 360, já que em média cada pixel de borda vota para cada um dos 360 ângulos θ testados — o limiar representa assim o número esperado de votos para uma reta que atravessa todos os pixels.',
       c: 'Rodar com limiar = 1 para ver todos os picos e seus valores, depois escolher um limiar logo acima do ponto onde há uma queda brusca entre picos reais e ruído.',
-      d: 'O limiar ideal é sempre igual ao número de figuras esperadas vezes 10.'
+      d: 'Multiplicar o número de figuras geométricas esperadas na imagem por 10, baseando-se na suposição de que cada figura gera em média um pico principal e até 9 harmônicos menores em posições adjacentes no acumulador.'
     },
     correct: 'c',
     explanation: 'Figuras reais concentram muitos votos; ruído tem poucos. Rodando com limiar = 1 você vê a lista completa em ordem decrescente. Normalmente há uma queda brusca entre os picos reais e o ruído (ex: 220, 127, 89, 65 → depois 22, 8, 4...). O limiar ideal fica logo acima dessa quebra, capturando só os picos significativos.'
@@ -724,6 +724,7 @@ const QUESTIONS = [
 // =====================================================================
 let state = { answers: {}, correct: {} };
 let activeQuestions = [];
+let questionMeta = [];
 const activeListas = new Set(['5', '6', '7', '8']);
 
 function toggleLista(lista) {
@@ -743,6 +744,7 @@ function startQuiz() {
     return;
   }
   state = { answers: {}, correct: {} };
+  questionMeta = [];
   activeQuestions = shuffle(QUESTIONS.filter(q => activeListas.has(q.lista)));
   document.getElementById('quiz-root').innerHTML = '';
   document.getElementById('scorebar').style.display = 'none';
@@ -754,14 +756,22 @@ function startQuiz() {
 function buildQuiz() {
   const root = document.getElementById('quiz-root');
   const total = activeQuestions.length;
+  const letters = ['a', 'b', 'c', 'd'];
   activeQuestions.forEach((q, i) => {
     const n = i + 1;
     const qid = `q${n}`;
-    const optionsHTML = Object.entries(q.options).map(([key, text]) => `
-      <label class="option" onclick="selectOption('${qid}','${key}',this)">
+    const shuffledEntries = shuffle(Object.entries(q.options));
+    let shuffledCorrect = '';
+    const optionsHTML = shuffledEntries.map(([origKey, text], j) => {
+      const newKey = letters[j];
+      if (origKey === q.correct) shuffledCorrect = newKey;
+      return `
+      <label class="option" onclick="selectOption('${qid}','${newKey}',this)">
         <div class="bubble"></div>
         <span class="option-text">${text}</span>
-      </label>`).join('');
+      </label>`;
+    }).join('');
+    questionMeta.push({ correct: shuffledCorrect });
 
     root.innerHTML += `
       <div class="question-card" id="${qid}">
@@ -770,7 +780,7 @@ function buildQuiz() {
         <div class="question-text">${q.question}</div>
         <div class="options">${optionsHTML}</div>
         <div class="feedback" id="fb${n}"></div>
-        <button class="check-btn" id="btn${n}" onclick="check('${qid}','${q.correct}',\`${q.explanation}\`)">Verificar</button>
+        <button class="check-btn" id="btn${n}" onclick="check('${qid}',${i})">Verificar</button>
       </div>`;
   });
 }
@@ -782,7 +792,9 @@ function selectOption(qid, value, el) {
   state.answers[qid] = value;
 }
 
-function check(qid, correctVal, explanation) {
+function check(qid, idx) {
+  const correctVal = questionMeta[idx].correct;
+  const explanation = activeQuestions[idx].explanation;
   const n = qid.slice(1);
   const btn = document.getElementById(`btn${n}`);
   const fb  = document.getElementById(`fb${n}`);

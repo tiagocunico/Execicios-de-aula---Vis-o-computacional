@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Animação — Lista 5: Filtros de Ruído</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px 16px; color: #1a1a2e; }
+    h1 { text-align: center; font-size: 1.4rem; margin-bottom: 4px; }
+    .subtitle { text-align: center; color: #666; font-size: 0.85rem; margin-bottom: 20px; }
+
+    /* ── Tab nav ── */
+    .tabs { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 24px; }
+    .tab {
+      padding: 9px 18px; border: none; border-radius: 8px;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      background: #e2e8f0; color: #475569; transition: background 0.15s;
+    }
+    .tab.active { background: #6c63ff; color: #fff; }
+    .tab:hover:not(.active) { background: #cbd5e1; }
+
+    /* ── Sections ── */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── Layout ── */
+    .layout { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+    .panel {
+      background: #fff; border-radius: 12px; padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); min-width: 160px;
+    }
+    .panel h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.07em; color: #888; margin-bottom: 10px; }
+    .panel p.desc { font-size: 0.75rem; color: #555; margin-top: 8px; line-height: 1.4; min-height: 30px; }
+
+    /* ── Pixel grid ── */
+    .grid { display: inline-grid; gap: 3px; }
+    .cell {
+      width: 38px; height: 38px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.78rem;
+      transition: background 0.25s, color 0.25s, transform 0.2s;
+      position: relative;
+    }
+    /* colour tokens */
+    .c-normal  { background: #e8eaf6; color: #3949ab; }
+    .c-window  { background: #f59e0b; color: #fff; transform: scale(1.05); }
+    .c-center  { background: #e11d48; color: #fff; transform: scale(1.1); }
+    .c-result  { background: #10b981; color: #fff; transform: scale(1.08); }
+    .c-salt    { background: #fff; color: #000; border: 2px solid #94a3b8; }
+    .c-pepper  { background: #1e293b; color: #fff; }
+    .c-done    { background: #a7f3d0; color: #065f46; }
+
+    /* ── Calc panel ── */
+    .calc-box {
+      background: #fff; border-radius: 12px; padding: 16px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 16px;
+      font-size: 0.88rem; line-height: 1.7;
+    }
+    .calc-box .formula { font-family: monospace; background: #f1f5f9; padding: 6px 12px; border-radius: 6px; margin: 6px 0; font-size: 0.85rem; }
+    .calc-box .result  { color: #10b981; font-weight: 700; }
+    .calc-box .warn    { color: #e11d48; font-weight: 700; }
+
+    /* ── Step info ── */
+    .step-info {
+      background: #fff; border-radius: 12px; padding: 14px 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 16px;
+      font-size: 0.88rem; line-height: 1.6;
+    }
+    .step-info strong { color: #6c63ff; }
+    .step-info code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: 0.82rem; }
+
+    /* ── Controls ── */
+    .controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+    button.ctrl {
+      padding: 9px 20px; border: none; border-radius: 8px;
+      font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: background 0.15s;
+    }
+    .btn-prev  { background: #e2e8f0; color: #475569; }
+    .btn-prev:hover  { background: #cbd5e1; }
+    .btn-next  { background: #6c63ff; color: #fff; }
+    .btn-next:hover  { background: #574fd6; }
+    .btn-play  { background: #10b981; color: #fff; }
+    .btn-play:hover  { background: #059669; }
+    .btn-reset { background: #f1f5f9; color: #64748b; }
+    .btn-reset:hover { background: #e2e8f0; }
+
+    .progress { text-align: center; font-size: 0.8rem; color: #888; margin-bottom: 14px; }
+    .progress span { font-weight: 700; color: #6c63ff; }
+
+    .legend { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 18px; }
+    .leg { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #555; }
+    .leg-box { width: 14px; height: 14px; border-radius: 3px; }
+
+    /* ── Freq bars (section 4) ── */
+    .freq-chart { display: flex; align-items: flex-end; gap: 4px; height: 120px; padding: 0 8px; }
+    .bar-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.4s, background 0.3s; }
+    .bar-label { font-size: 0.65rem; color: #888; margin-top: 3px; text-align: center; }
+
+    /* noise histogram */
+    .hist-bars { display: flex; align-items: flex-end; gap: 2px; height: 80px; }
+    .hbar { border-radius: 2px 2px 0 0; transition: height 0.3s; }
+
+    /* sort row */
+    .sort-row { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
+    .sort-cell {
+      width: 32px; height: 32px; border-radius: 5px; display: flex; align-items: center;
+      justify-content: center; font-weight: 700; font-size: 0.78rem;
+      transition: background 0.3s;
+    }
+    .sc-normal  { background: #e2e8f0; color: #475569; }
+    .sc-outlier { background: #e11d48; color: #fff; }
+    .sc-median  { background: #10b981; color: #fff; transform: scale(1.1); }
+    .sc-mean-bad{ background: #f59e0b; color: #fff; }
+  </style>
+</head>
+<body>
+
+<h1>Lista 5 — Filtros de Ruído em Imagens</h1>
+<p class="subtitle">Animações passo a passo dos conceitos da Lista 5</p>
+
+<div class="tabs">
+  <button class="tab active" onclick="showSection('s-ruido',this)">1 · Tipos de Ruído</button>
+  <button class="tab" onclick="showSection('s-media',this)">2 · Média Aritmética</button>
+  <button class="tab" onclick="showSection('s-mediana',this)">3 · Mediana</button>
+  <button class="tab" onclick="showSection('s-inversa',this)">4 · Filtro Inverso</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SEÇÃO 1 — TIPOS DE RUÍDO
+════════════════════════════════════════════════════════════════ -->
+<div id="s-ruido" class="section active">
+
+  <div class="legend">
+    <div class="leg"><div class="leg-box" style="background:#e8eaf6;border:1px solid #9fa8da"></div>Pixel limpo</div>
+    <div class="leg"><div class="leg-box" style="background:#f59e0b"></div>Ruído Gaussiano</div>
+    <div class="leg"><div class="leg-box" style="background:#1e293b"></div>Ruído Pimenta (0)</div>
+    <div class="leg"><div class="leg-box" style="background:#fff;border:1px solid #94a3b8"></div>Ruído Sal (255)</div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl btn-reset" onclick="noiseReset()">↺ Reiniciar</button>
+    <button class="ctrl btn-prev"  onclick="noisePrev()">← Anterior</button>
+    <button class="ctrl btn-next"  onclick="noiseNext()">Próximo →</button>
+    <button class="ctrl btn-play"  id="noisePlayBtn" onclick="noiseTogglePlay()">▶ Auto</button>
+  </div>
+  <div class="progress">Passo <span id="noiseStepNum">0</span> de <span id="noiseStepTotal">?</span></div>
+  <div class="step-info" id="noiseInfo">Clique em <strong>Próximo</strong> para começar.</div>
+
+  <div class="layout">
+    <div class="panel">
+      <h2>Imagem Original (7×7)</h2>
+      <div class="grid" id="noiseCleanGrid" style="grid-template-columns: repeat(7, 38px)"></div>
+      <p class="desc">Imagem sem ruído — tons de cinza de 0 (preto) a 255 (branco).</p>
+    </div>
+    <div class="panel">
+      <h2>Imagem com Ruído</h2>
+      <div class="grid" id="noiseNoisyGrid" style="grid-template-columns: repeat(7, 38px)"></div>
+      <p class="desc" id="noisyDesc">Aguardando animação…</p>
+    </div>
+    <div class="panel" style="max-width:220px">
+      <h2>Histograma da ROI plana</h2>
+      <div class="hist-bars" id="histBars"></div>
+      <p class="desc" id="histDesc">O histograma revela o tipo do ruído.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SEÇÃO 2 — FILTRO DE MÉDIA ARITMÉTICA
+════════════════════════════════════════════════════════════════ -->
+<div id="s-media" class="section">
+
+  <div class="legend">
+    <div class="leg"><div class="leg-box" style="background:#e8eaf6;border:1px solid #9fa8da"></div>Pixel normal</div>
+    <div class="leg"><div class="leg-box" style="background:#f59e0b"></div>Janela 3×3 ativa</div>
+    <div class="leg"><div class="leg-box" style="background:#e11d48"></div>Pixel central (alvo)</div>
+    <div class="leg"><div class="leg-box" style="background:#10b981"></div>Resultado calculado</div>
+    <div class="leg"><div class="leg-box" style="background:#a7f3d0;border:1px solid #065f46"></div>Pixel já filtrado</div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl btn-reset" onclick="mediaReset()">↺ Reiniciar</button>
+    <button class="ctrl btn-prev"  onclick="mediaPrev()">← Anterior</button>
+    <button class="ctrl btn-next"  onclick="mediaNext()">Próximo →</button>
+    <button class="ctrl btn-play"  id="mediaPlayBtn" onclick="mediaTogglePlay()">▶ Auto</button>
+  </div>
+  <div class="progress">Passo <span id="mediaStepNum">0</span> de <span id="mediaStepTotal">?</span></div>
+  <div class="step-info" id="mediaInfo">Clique em <strong>Próximo</strong> para começar.</div>
+
+  <div class="layout">
+    <div class="panel">
+      <h2>Imagem com Ruído Gaussiano (7×7)</h2>
+      <div class="grid" id="mediaInputGrid" style="grid-template-columns: repeat(7, 38px)"></div>
+      <p class="desc">A janela 3×3 desliza por cada pixel.</p>
+    </div>
+    <div class="panel" style="max-width:200px">
+      <h2>Janela 3×3 Extraída</h2>
+      <div class="grid" id="mediaWindowGrid" style="grid-template-columns: repeat(3, 38px)"></div>
+      <p class="desc" id="mediaWindowDesc">Os 9 vizinhos do pixel central.</p>
+    </div>
+    <div class="panel">
+      <h2>Imagem Filtrada (saída)</h2>
+      <div class="grid" id="mediaOutputGrid" style="grid-template-columns: repeat(7, 38px)"></div>
+      <p class="desc">Cada pixel substituído pela média da vizinhança.</p>
+    </div>
+  </div>
+
+  <div class="calc-box" id="mediaCalcBox">
+    <em>A conta aparecerá aqui a cada passo.</em>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SEÇÃO 3 — FILTRO DE MEDIANA
+════════════════════════════════════════════════════════════════ -->
+<div id="s-mediana" class="section">
+
+  <div class="legend">
+    <div class="leg"><div class="leg-box" style="background:#e8eaf6;border:1px solid #9fa8da"></div>Pixel normal</div>
+    <div class="leg"><div class="leg-box" style="background:#f59e0b"></div>Janela 3×3 ativa</div>
+    <div class="leg"><div class="leg-box" style="background:#e11d48"></div>Pixel central (alvo)</div>
+    <div class="leg"><div class="leg-box" style="background:#10b981"></div>Mediana escolhida</div>
+    <div class="leg"><div class="leg-box" style="background:#1e293b"></div>Pimenta (0)</div>
+    <div class="leg"><div class="leg-box" style="background:#fff;border:1px solid #94a3b8"></div>Sal (255)</div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl btn-reset" onclick="medReset()">↺ Reiniciar</button>
+    <button class="ctrl btn-prev"  onclick="medPrev()">← Anterior</button>
+    <button class="ctrl btn-next"  onclick="medNext()">Próximo →</button>
+    <button class="ctrl btn-play"  id="medPlayBtn" onclick="medTogglePlay()">▶ Auto</button>
+  </div>
+  <div class="progress">Passo <span id="medStepNum">0</span> de <span id="medStepTotal">?</span></div>
+  <div class="step-info" id="medInfo">Clique em <strong>Próximo</strong> para começar.</div>
+
+  <div class="layout">
+    <div class="panel">
+      <h2>Imagem com Ruído Sal &amp; Pimenta (7×7)</h2>
+      <div class="grid" id="medInputGrid" style="grid-template-columns: repeat(7, 38px)"></div>
+      <p class="desc">Pixels corrompidos: 0 (pimenta) e 255 (sal).</p>
+    </div>
+    <div class="panel" style="max-width:200px">
+      <h2>Janela 3×3 — Valores Ordenados</h2>
+      <div id="medSortArea"></div>
+      <p class="desc" id="medSortDesc">A mediana = o valor do meio após ordenar.</p>
+    </div>
+    <div class="panel">
+      <h2>Imagem Filtrada (saída)</h2>
+      <div class="grid" id="medOutputGrid" style="grid-template-columns: repeat(7, 38px)"></div>
+      <p class="desc">Sal e Pimenta eliminados sem borrar bordas.</p>
+    </div>
+  </div>
+
+  <div class="calc-box" id="medCalcBox">
+    <em>A conta aparecerá aqui a cada passo.</em>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SEÇÃO 4 — FILTRAGEM INVERSA
+════════════════════════════════════════════════════════════════ -->
+<div id="s-inversa" class="section">
+
+  <div class="controls">
+    <button class="ctrl btn-reset" onclick="invReset()">↺ Reiniciar</button>
+    <button class="ctrl btn-prev"  onclick="invPrev()">← Anterior</button>
+    <button class="ctrl btn-next"  onclick="invNext()">Próximo →</button>
+    <button class="ctrl btn-play"  id="invPlayBtn" onclick="invTogglePlay()">▶ Auto</button>
+  </div>
+  <div class="progress">Passo <span id="invStepNum">0</span> de <span id="invStepTotal">?</span></div>
+  <div class="step-info" id="invInfo">Clique em <strong>Próximo</strong> para começar.</div>
+
+  <div class="layout">
+    <div class="panel" style="min-width:180px">
+      <h2>G(u,v) — Imagem Borrada (FFT)</h2>
+      <div class="freq-chart" id="freqG"></div>
+      <p class="desc">Frequências da imagem degradada.</p>
+    </div>
+    <div class="panel" style="min-width:180px">
+      <h2>H(u,v) — Filtro de Média (FFT)</h2>
+      <div class="freq-chart" id="freqH"></div>
+      <p class="desc">Filtro passa-baixas: atenua altas frequências.</p>
+    </div>
+    <div class="panel" style="min-width:180px">
+      <h2>N(u,v) / H(u,v) — Ruído Amplificado</h2>
+      <div class="freq-chart" id="freqNH"></div>
+      <p class="desc" id="invNHDesc">O ruído dividido por H explode nas altas frequências.</p>
+    </div>
+    <div class="panel" style="min-width:180px">
+      <h2>F̂(u,v) — Imagem Recuperada?</h2>
+      <div class="freq-chart" id="freqF"></div>
+      <p class="desc" id="invFDesc">Resultado da divisão G/H.</p>
+    </div>
+  </div>
+
+  <div class="calc-box" id="invCalcBox">
+    <em>A conta aparecerá aqui a cada passo.</em>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   SHARED UTILS
+══════════════════════════════════════════════════════════════ */
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function pixelColor(v) {
+  if (v <= 10)  return '#1e293b';
+  if (v >= 245) return '#f8fafc';
+  const g = Math.round(v);
+  return `rgb(${g},${g},${g})`;
+}
+function textColor(v) {
+  return v < 128 ? '#e2e8f0' : '#1e293b';
+}
+function cellClass(v) {
+  if (v <= 10)  return 'c-pepper';
+  if (v >= 245) return 'c-salt';
+  return 'c-normal';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SECTION 1 — NOISE
+══════════════════════════════════════════════════════════════ */
+const CLEAN = [
+  [55,55,55,55,200,200,200],
+  [55,55,55,55,200,200,200],
+  [55,55,55,55,200,200,200],
+  [55,55,55,55,200,200,200],
+  [55,55,55,55,200,200,200],
+  [55,55,55,55,200,200,200],
+  [55,55,55,55,200,200,200],
+];
+// Gaussian: ±25 perturbation
+const GAUSS = [
+  [72,45,68,52,215,178,195],
+  [48,75,38,82,185,220,175],
+  [65,55,70,45,195,205,185],
+  [80,42,58,65,178,190,215],
+  [55,68,75,50,205,178,195],
+  [45,78,55,72,192,215,175],
+  [68,52,62,48,185,200,208],
+];
+// Salt & Pepper (0 or 255 pixels)
+const SP = [
+  [ 55, 0,  55, 55,200,200,200],
+  [ 55,55,  55,255,200,  0,200],
+  [255,55,  55, 55,200,200,200],
+  [ 55,55,   0, 55,200,255,200],
+  [ 55,55,  55, 55,  0,200,200],
+  [ 55,78, 255, 55,200,200,  0],
+  [ 55,55,  55, 55,200,200,200],
+];
+
+// Hist data: 16 bins
+// Gaussian: bell curve shape, Uniform: flat block, SP: two spikes at ends
+const HIST_GAUSS  = [2,4,10,18,26,30,26,18,10,4,2,1,1,0,0,0];
+const HIST_UNIFORM= [8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8];
+const HIST_SP     = [35,1,0,0,0,0,0,1,1,0,0,0,0,0,1,35];
+
+let noiseStep = 0, noisePlaying = false, noiseTimer = null;
+const noiseSteps = [
+  {
+    info: `<strong>Passo 0 — Imagem Limpa</strong><br>
+           A imagem original tem dois tons: escuro (~55) na esquerda e claro (~200) na direita — uma borda nítida.<br>
+           <em>Numa área homogênea (por exemplo, toda a coluna esquerda), todo pixel deveria ter exatamente o mesmo valor.</em>`,
+    noisy: 'none',
+    hist: null,
+    histDesc: 'Sem ruído: todos os pixels da ROI têm o mesmo valor.',
+  },
+  {
+    info: `<strong>Passo 1 — Ruído Gaussiano</strong><br>
+           Cada pixel sofre uma perturbação aleatória com distribuição normal: a maioria muda pouco (~±15),
+           variações grandes são raras. A fórmula é <code>pixel_ruidoso = pixel + N(0, σ²)</code>.<br>
+           <em>O histograma de uma região plana forma um sino (curva normal).</em>`,
+    noisy: 'gauss',
+    hist: HIST_GAUSS,
+    histColor: '#6c63ff',
+    histDesc: 'Sino gaussiano: concentrado no centro, caudas finas.',
+  },
+  {
+    info: `<strong>Passo 2 — Ruído Sal &amp; Pimenta (Impulsivo)</strong><br>
+           Pixels aleatórios são substituídos por <code>0</code> (pimenta = preto) ou <code>255</code> (sal = branco).<br>
+           Isso simula falhas de sensor, transmissão corrompida ou bit-flips.<br>
+           <em>O histograma tem dois picos extremos: nas barras 0 e 255.</em>`,
+    noisy: 'sp',
+    hist: HIST_SP,
+    histColor: '#e11d48',
+    histDesc: 'Dois picos extremos: 0 (pimenta) e 255 (sal).',
+  },
+  {
+    info: `<strong>Conclusão — Por que usar uma região plana (ROI)?</strong><br>
+           Em uma área sem textura, <em>toda</em> variação de intensidade é causada pelo ruído.
+           O histograma dessa ROI revela a "assinatura" do ruído:
+           <ul style="margin-left:16px;margin-top:4px">
+             <li>Sino → Gaussiano → use Média Aritmética ou Mediana</li>
+             <li>Retângulo → Uniforme → use Média Aritmética</li>
+             <li>Dois picos extremos → Sal &amp; Pimenta → use Mediana</li>
+           </ul>`,
+    noisy: 'sp',
+    hist: HIST_SP,
+    histColor: '#e11d48',
+    histDesc: 'A forma do histograma identifica o tipo de ruído.',
+  },
+];
+
+function renderNoiseGrid(id, data, highlight) {
+  const g = document.getElementById(id);
+  g.innerHTML = '';
+  if (!data) { g.innerHTML = '<em style="font-size:0.8rem;color:#aaa">—</em>'; return; }
+  data.forEach(row => row.forEach(v => {
+    const d = document.createElement('div');
+    d.className = 'cell';
+    d.style.background = pixelColor(v);
+    d.style.color = textColor(v);
+    d.textContent = v;
+    if (v <= 10)  { d.style.background = '#1e293b'; d.style.color='#e2e8f0'; }
+    if (v >= 245) { d.style.background = '#f8fafc'; d.style.color='#1e293b'; d.style.border='1.5px solid #94a3b8'; }
+    g.appendChild(d);
+  }));
+}
+
+function renderHist(data, color) {
+  const c = document.getElementById('histBars');
+  c.innerHTML = '';
+  if (!data) { c.innerHTML = '<em style="font-size:0.75rem;color:#aaa">—</em>'; return; }
+  const mx = Math.max(...data);
+  data.forEach((v,i) => {
+    const h = Math.round((v / mx) * 76);
+    const bar = document.createElement('div');
+    bar.className = 'hbar';
+    bar.style.cssText = `height:${h}px;width:10px;background:${color || '#6c63ff'}`;
+    c.appendChild(bar);
+  });
+}
+
+function noiseRender() {
+  const s = noiseSteps[noiseStep];
+  document.getElementById('noiseStepNum').textContent = noiseStep;
+  document.getElementById('noiseStepTotal').textContent = noiseSteps.length - 1;
+  document.getElementById('noiseInfo').innerHTML = s.info;
+  renderNoiseGrid('noiseCleanGrid', CLEAN);
+  const nData = s.noisy === 'gauss' ? GAUSS : s.noisy === 'sp' ? SP : null;
+  renderNoiseGrid('noiseNoisyGrid', nData);
+  document.getElementById('noisyDesc').textContent =
+    s.noisy === 'gauss' ? 'Ruído Gaussiano: variações suaves aleatórias.' :
+    s.noisy === 'sp'    ? 'Sal & Pimenta: pixels completamente corrompidos (0 ou 255).' :
+    'Ainda sem ruído — imagem limpa.';
+  renderHist(s.hist, s.histColor);
+  document.getElementById('histDesc').textContent = s.histDesc || '';
+}
+
+function noiseNext()  { if (noiseStep < noiseSteps.length-1) { noiseStep++; noiseRender(); } else noiseStopPlay(); }
+function noisePrev()  { if (noiseStep > 0) { noiseStep--; noiseRender(); } }
+function noiseReset() { noiseStep = 0; noiseStopPlay(); noiseRender(); }
+function noiseTogglePlay() {
+  if (noisePlaying) { noiseStopPlay(); }
+  else { noisePlaying = true; document.getElementById('noisePlayBtn').textContent = '⏸ Pausar';
+    noiseTimer = setInterval(() => { if (noiseStep < noiseSteps.length-1) { noiseStep++; noiseRender(); } else noiseStopPlay(); }, 2200); }
+}
+function noiseStopPlay() {
+  noisePlaying = false; clearInterval(noiseTimer);
+  document.getElementById('noisePlayBtn').textContent = '▶ Auto';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SECTION 2 — MEAN FILTER
+══════════════════════════════════════════════════════════════ */
+// Use GAUSS image, show 3×3 window sliding through interior pixels
+const MEDIA_INPUT = GAUSS;
+// Pre-computed output (3x3 average of GAUSS, border = original)
+const MEDIA_OUTPUT = (() => {
+  const R = 7, C = 7;
+  const out = MEDIA_INPUT.map(r => [...r]);
+  for (let r=1; r<R-1; r++) {
+    for (let c=1; c<C-1; c++) {
+      let s = 0;
+      for (let dr=-1; dr<=1; dr++) for (let dc=-1; dc<=1; dc++) s += MEDIA_INPUT[r+dr][c+dc];
+      out[r][c] = Math.round(s / 9);
+    }
+  }
+  return out;
+})();
+
+// Generate animation steps: one per interior pixel
+let mediaSteps = [];
+(function buildMediaSteps() {
+  // intro step
+  mediaSteps.push({
+    type:'intro',
+    info:`<strong>Filtro de Média Aritmética</strong><br>
+          Uma janela 3×3 desliza sobre a imagem com ruído Gaussiano. Para cada pixel central,
+          calculamos a <em>média dos 9 vizinhos</em> (incluindo o próprio pixel) e substituímos o valor.
+          <br><code>pixel_saída = (soma dos 9 vizinhos) / 9</code><br>
+          <em>Clique em Próximo para começar a percorrer os pixels.</em>`,
+    wr:-1, wc:-1, vals:null, mean:null,
+  });
+  for (let r=1; r<=5; r++) {
+    for (let c=1; c<=5; c++) {
+      const vals = [];
+      for (let dr=-1; dr<=1; dr++)
+        for (let dc=-1; dc<=1; dc++)
+          vals.push(MEDIA_INPUT[r+dr][c+dc]);
+      const sum = vals.reduce((a,b)=>a+b,0);
+      const mean = Math.round(sum/9);
+      mediaSteps.push({ type:'step', wr:r, wc:c, vals, sum, mean,
+        info:`<strong>Pixel (linha ${r+1}, col ${c+1})</strong> — janela 3×3 em laranja, centro em vermelho.<br>
+              Extraímos os <strong>9 valores</strong> da vizinhança, somamos e dividimos por 9.<br>
+              <em>Resultado: ${mean}</em> (original era ${MEDIA_INPUT[r][c]}).` });
+    }
+  }
+  // conclusion
+  mediaSteps.push({
+    type:'done',
+    info:`<strong>Filtro concluído!</strong><br>
+          ✅ <strong>Ponto positivo:</strong> O ruído Gaussiano foi suavizado — a imagem ficou menos "granulada".<br>
+          ⚠️ <strong>Ponto negativo:</strong> A borda vertical (transição escuro→claro) ficou <em>borrada</em>.
+          Pixels da média misturaram valores claros e escuros, criando um gradiente difuso no lugar de um degrau nítido.<br>
+          <em>→ Para preservar bordas, o Filtro de Mediana é superior (veja a seção 3).</em>`,
+    wr:-2, wc:-2, vals:null,
+  });
+})();
+
+let mediaStep = 0, mediaPlaying = false, mediaTimer = null;
+let mediaDoneRows = new Set();
+
+function renderMediaGrid(inputId, outputId, wr, wc) {
+  const inG = document.getElementById(inputId);
+  inG.innerHTML = '';
+  const done = mediaStep > 0 && mediaSteps[mediaStep].type !== 'intro';
+  // which pixels are "done" so far
+  const doneSet = new Set();
+  for (let k=1; k < mediaStep; k++) {
+    const s = mediaSteps[k];
+    if (s.type === 'step') doneSet.add(s.wr * 7 + s.wc);
+  }
+
+  MEDIA_INPUT.forEach((row, r) => row.forEach((v, c) => {
+    const d = document.createElement('div');
+    d.className = 'cell';
+    const inWindow = wr>=0 && Math.abs(r-wr)<=1 && Math.abs(c-wc)<=1;
+    const isCenter = r===wr && c===wc;
+    if (isCenter) { d.style.background='#e11d48'; d.style.color='#fff'; d.style.transform='scale(1.1)'; }
+    else if (inWindow) { d.style.background='#f59e0b'; d.style.color='#fff'; d.style.transform='scale(1.05)'; }
+    else { d.style.background=pixelColor(v); d.style.color=textColor(v); }
+    d.textContent = v;
+    inG.appendChild(d);
+  }));
+
+  const outG = document.getElementById(outputId);
+  outG.innerHTML = '';
+  const curStep = mediaSteps[mediaStep];
+  MEDIA_OUTPUT.forEach((row, r) => row.forEach((v, c) => {
+    const d = document.createElement('div');
+    d.className = 'cell';
+    const isDone = doneSet.has(r*7+c);
+    const isCurrent = curStep.type==='step' && r===curStep.wr && c===curStep.wc;
+    if (isCurrent) { d.style.background='#10b981'; d.style.color='#fff'; d.style.transform='scale(1.08)'; }
+    else if (isDone) { d.style.background='#a7f3d0'; d.style.color='#065f46'; }
+    else { d.style.background='#e8eaf6'; d.style.color='#9fa8da'; d.textContent='?'; outG.appendChild(d); return; }
+    d.textContent = v;
+    outG.appendChild(d);
+  }));
+}
+
+function renderMediaWindow(vals) {
+  const g = document.getElementById('mediaWindowGrid');
+  g.innerHTML = '';
+  if (!vals) { g.innerHTML = '<em style="font-size:0.75rem;color:#aaa">—</em>'; return; }
+  vals.forEach((v,i) => {
+    const d = document.createElement('div');
+    d.className = 'cell';
+    if (i===4) { d.style.background='#e11d48'; d.style.color='#fff'; }
+    else { d.style.background='#f59e0b'; d.style.color='#fff'; }
+    d.textContent = v;
+    g.appendChild(d);
+  });
+}
+
+function renderMediaCalc(step) {
+  const box = document.getElementById('mediaCalcBox');
+  if (step.type === 'intro' || step.type === 'done') { box.innerHTML = '<em>'+step.info.replace(/<[^>]*>/g,' ')+'</em>'; return; }
+  const { vals, sum, mean } = step;
+  box.innerHTML = `
+    <b>Valores na janela 3×3:</b><br>
+    <div class="formula">${vals.slice(0,3).join(' + ')} + ${vals.slice(3,6).join(' + ')} + ${vals.slice(6,9).join(' + ')}</div>
+    <b>Soma:</b> <span class="formula">${vals.join(' + ')} = ${sum}</span>
+    <b>Média Aritmética (N=9):</b> <span class="formula">${sum} ÷ 9 = <span class="result">${mean}</span></span>
+    <em>O pixel central (${vals[4]}) é substituído por <strong>${mean}</strong>.</em>
+  `;
+}
+
+function mediaRender() {
+  const s = mediaSteps[mediaStep];
+  document.getElementById('mediaStepNum').textContent = mediaStep;
+  document.getElementById('mediaStepTotal').textContent = mediaSteps.length - 1;
+  document.getElementById('mediaInfo').innerHTML = s.info;
+  renderMediaGrid('mediaInputGrid','mediaOutputGrid', s.wr, s.wc);
+  renderMediaWindow(s.vals);
+  renderMediaCalc(s);
+}
+function mediaNext()  { if (mediaStep < mediaSteps.length-1) { mediaStep++; mediaRender(); } else mediaStopPlay(); }
+function mediaPrev()  { if (mediaStep > 0) { mediaStep--; mediaRender(); } }
+function mediaReset() { mediaStep = 0; mediaStopPlay(); mediaRender(); }
+function mediaTogglePlay() {
+  if (mediaPlaying) { mediaStopPlay(); }
+  else { mediaPlaying=true; document.getElementById('mediaPlayBtn').textContent='⏸ Pausar';
+    mediaTimer=setInterval(()=>{ if(mediaStep<mediaSteps.length-1){mediaStep++;mediaRender();}else mediaStopPlay(); },900); }
+}
+function mediaStopPlay() {
+  mediaPlaying=false; clearInterval(mediaTimer);
+  document.getElementById('mediaPlayBtn').textContent='▶ Auto';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SECTION 3 — MEDIAN FILTER
+══════════════════════════════════════════════════════════════ */
+const MED_INPUT = SP; // salt & pepper image
+const MED_OUTPUT = (() => {
+  const R = 7, C = 7;
+  const out = MED_INPUT.map(r => [...r]);
+  for (let r=1; r<R-1; r++) {
+    for (let c=1; c<C-1; c++) {
+      const vals = [];
+      for (let dr=-1; dr<=1; dr++) for (let dc=-1; dc<=1; dc++) vals.push(MED_INPUT[r+dr][c+dc]);
+      vals.sort((a,b)=>a-b);
+      out[r][c] = vals[4]; // median = 5th of 9
+    }
+  }
+  return out;
+})();
+
+let medSteps = [];
+(function buildMedSteps() {
+  medSteps.push({
+    type:'intro',
+    info:`<strong>Filtro de Mediana</strong><br>
+          Ideal para eliminar <em>Ruído Sal &amp; Pimenta</em>. Em vez de calcular a média (que seria arrastada por 0s e 255s),
+          a Mediana <strong>ordena</strong> os 9 pixels e escolhe o valor do <em>meio</em> (5° de 9).<br>
+          <code>pixel_saída = valor_do_meio (após ordenar os 9 vizinhos)</code><br>
+          <em>Outliers (0 e 255) vão para as pontas da lista — longe do meio — e são descartados!</em>`,
+    wr:-1, wc:-1, vals:null, sorted:null,
+  });
+  for (let r=1; r<=5; r++) {
+    for (let c=1; c<=5; c++) {
+      const vals = [];
+      for (let dr=-1; dr<=1; dr++) for (let dc=-1; dc<=1; dc++) vals.push(MED_INPUT[r+dr][c+dc]);
+      const sorted = [...vals].sort((a,b)=>a-b);
+      const med = sorted[4];
+      const meanVal = Math.round(vals.reduce((a,b)=>a+b,0)/9);
+      const hasOutlier = vals.some(v => v<=10 || v>=245);
+      medSteps.push({ type:'step', wr:r, wc:c, vals, sorted, med, meanVal, hasOutlier,
+        info:`<strong>Pixel (linha ${r+1}, col ${c+1})</strong> — janela 3×3 em laranja, centro em vermelho.<br>
+              ${hasOutlier
+                ? `⚠️ Há um outlier (${vals.filter(v=>v<=10||v>=245).join(', ')}) na janela. Após ordenar, ele vai para a <strong>ponta</strong> da lista e o valor do meio é preservado.`
+                : `Sem outliers nesta janela — a mediana e a média serão parecidas.`}
+              <br><em>Mediana = ${med}${hasOutlier ? ` (Média aritmética seria ${meanVal} — muito pior!)` : ''}</em>` });
+    }
+  }
+  medSteps.push({
+    type:'done',
+    info:`<strong>Filtro de Mediana concluído!</strong><br>
+          ✅ <strong>Sal &amp; Pimenta eliminados:</strong> Os 0s e 255s foram removidos sem deixar rastros.<br>
+          ✅ <strong>Bordas preservadas:</strong> A mediana não inventa valores novos — ela escolhe um que já existe na vizinhança.
+          Ao cruzar uma borda, ela "pula" diretamente para o tom do outro lado, mantendo o degrau nítido.<br>
+          ✅ <strong>Conclusão:</strong> Mediana é o melhor filtro para ruído Sal &amp; Pimenta (impulsivo).`,
+    wr:-2, wc:-2, vals:null, sorted:null,
+  });
+})();
+
+let medStep = 0, medPlaying = false, medTimer = null;
+
+function renderMedGrid(inputId, outputId, wr, wc) {
+  const inG = document.getElementById(inputId);
+  inG.innerHTML = '';
+  const doneSet = new Set();
+  for (let k=1; k<medStep; k++) { const s=medSteps[k]; if(s.type==='step') doneSet.add(s.wr*7+s.wc); }
+  MED_INPUT.forEach((row, r) => row.forEach((v, c) => {
+    const d = document.createElement('div');
+    d.className = 'cell';
+    const inWin = wr>=0 && Math.abs(r-wr)<=1 && Math.abs(c-wc)<=1;
+    const isCenter = r===wr && c===wc;
+    if (isCenter) { d.style.background='#e11d48'; d.style.color='#fff'; d.style.transform='scale(1.1)'; }
+    else if (inWin) { d.style.background='#f59e0b'; d.style.color='#fff'; d.style.transform='scale(1.05)'; }
+    else if (v<=10)  { d.style.background='#1e293b'; d.style.color='#e2e8f0'; }
+    else if (v>=245) { d.style.background='#f8fafc'; d.style.color='#1e293b'; d.style.border='1.5px solid #94a3b8'; }
+    else { d.style.background=pixelColor(v); d.style.color=textColor(v); }
+    d.textContent = v;
+    inG.appendChild(d);
+  }));
+
+  const outG = document.getElementById(outputId);
+  outG.innerHTML = '';
+  const cur = medSteps[medStep];
+  MED_OUTPUT.forEach((row, r) => row.forEach((v, c) => {
+    const d = document.createElement('div');
+    d.className = 'cell';
+    const isDone = doneSet.has(r*7+c);
+    const isCur = cur.type==='step' && r===cur.wr && c===cur.wc;
+    if (isCur) { d.style.background='#10b981'; d.style.color='#fff'; d.style.transform='scale(1.08)'; }
+    else if (isDone) { d.style.background='#a7f3d0'; d.style.color='#065f46'; }
+    else { d.style.background='#e8eaf6'; d.style.color='#9fa8da'; d.textContent='?'; outG.appendChild(d); return; }
+    d.textContent = v;
+    outG.appendChild(d);
+  }));
+}
+
+function renderSortArea(sorted, med, vals) {
+  const area = document.getElementById('medSortArea');
+  area.innerHTML = '';
+  if (!sorted) return;
+
+  const title = document.createElement('div');
+  title.style.cssText = 'font-size:0.7rem;color:#888;margin-bottom:4px';
+  title.textContent = 'Valores ordenados (↑):';
+  area.appendChild(title);
+
+  const row = document.createElement('div');
+  row.className = 'sort-row';
+  sorted.forEach((v, i) => {
+    const d = document.createElement('div');
+    d.className = 'sort-cell';
+    if (i === 4) { d.classList.add('sc-median'); }
+    else if (v <= 10 || v >= 245) { d.classList.add('sc-outlier'); }
+    else { d.classList.add('sc-normal'); }
+    d.textContent = v;
+    row.appendChild(d);
+  });
+  area.appendChild(row);
+
+  const note = document.createElement('div');
+  note.style.cssText = 'font-size:0.72rem;color:#555;margin-top:6px';
+  note.innerHTML = `🟢 Mediana = <strong>${med}</strong> (posição 5)`;
+  area.appendChild(note);
+}
+
+function renderMedCalc(step) {
+  const box = document.getElementById('medCalcBox');
+  if (step.type !== 'step') { box.innerHTML = '<em>Detalhes do cálculo aparecem aqui.</em>'; return; }
+  const { vals, sorted, med, meanVal, hasOutlier } = step;
+  box.innerHTML = `
+    <b>Valores na janela (não ordenados):</b>
+    <div class="formula">[${vals.join(', ')}]</div>
+    <b>Após ordenar crescente:</b>
+    <div class="formula">[${sorted.join(', ')}]</div>
+    <b>Mediana (5° de 9):</b> <span class="formula"><span class="result">${med}</span></span>
+    ${hasOutlier ? `<b>Média Aritmética seria:</b> <span class="formula"><span class="warn">${meanVal}</span></span> ← arrastada pelo outlier!` : ''}
+  `;
+}
+
+function medRender() {
+  const s = medSteps[medStep];
+  document.getElementById('medStepNum').textContent = medStep;
+  document.getElementById('medStepTotal').textContent = medSteps.length - 1;
+  document.getElementById('medInfo').innerHTML = s.info;
+  renderMedGrid('medInputGrid','medOutputGrid', s.wr, s.wc);
+  renderSortArea(s.sorted, s.med, s.vals);
+  renderMedCalc(s);
+}
+function medNext()  { if(medStep<medSteps.length-1){medStep++;medRender();}else medStopPlay(); }
+function medPrev()  { if(medStep>0){medStep--;medRender();} }
+function medReset() { medStep=0; medStopPlay(); medRender(); }
+function medTogglePlay() {
+  if(medPlaying){medStopPlay();}
+  else{medPlaying=true;document.getElementById('medPlayBtn').textContent='⏸ Pausar';
+    medTimer=setInterval(()=>{if(medStep<medSteps.length-1){medStep++;medRender();}else medStopPlay();},900);}
+}
+function medStopPlay() { medPlaying=false;clearInterval(medTimer);document.getElementById('medPlayBtn').textContent='▶ Auto'; }
+
+/* ══════════════════════════════════════════════════════════════
+   SECTION 4 — INVERSE FILTER
+══════════════════════════════════════════════════════════════ */
+// 8 frequency bins: low → high
+// G = blurred image spectrum (high freq attenuated)
+// H = mean filter (low-pass: high H at low freqs, near-zero at high)
+// N = noise (energy at all freqs)
+// N/H = amplified noise (catastrophic at high freqs)
+// F_est = G/H = F_clean + N/H
+
+const FREQ_LABELS = ['DC','f1','f2','f3','f4','f5','f6','f7'];
+const F_CLEAN = [100, 90, 75, 55, 30, 15, 8, 4];  // clean image spectrum
+const H_VALS  = [1.0, 0.95, 0.80, 0.55, 0.30, 0.12, 0.04, 0.01]; // mean filter (low-pass)
+const N_VALS  = [5,   5,   5,   5,   5,   5,   5,   5];  // flat noise
+// G = F * H + N (simplified)
+const G_VALS  = F_CLEAN.map((f,i) => Math.round(f * H_VALS[i] + N_VALS[i]));
+// N/H (the amplification)
+const NH_VALS = N_VALS.map((n,i) => H_VALS[i] > 0.08 ? Math.round(n/H_VALS[i]) : 999);
+// F_estimated = G/H
+const F_EST   = G_VALS.map((g,i) => H_VALS[i] > 0.08 ? Math.round(g/H_VALS[i]) : 999);
+
+const invSteps = [
+  {
+    info: `<strong>Contexto — O Modelo de Degradação</strong><br>
+           A imagem foi degradada por dois fatores:<br>
+           1. <code>H(u,v)</code> — um filtro de média (borramento)<br>
+           2. <code>N(u,v)</code> — ruído Gaussiano aditivo<br>
+           O modelo completo é: <code>G = H · F + N</code><br>
+           Nosso objetivo: recuperar <code>F</code> (imagem original limpa) a partir de <code>G</code> (que observamos).`,
+    showG:false, showH:false, showNH:false, showF:false,
+    calc:'<em>Aguardando próximo passo...</em>',
+  },
+  {
+    info: `<strong>Passo 1 — G(u,v): Espectro da Imagem Borrada</strong><br>
+           Aplicamos a Transformada de Fourier (FFT) em <code>G</code>. Observe que as <em>altas frequências</em>
+           estão enfraquecidas — o filtro de média já as atenuou. Informação de bordas e detalhes finos está quase apagada.`,
+    showG:true, showH:false, showNH:false, showF:false,
+    calc:'<b>Transformada de Fourier:</b><br><span class="formula">G(u,v) = FFT{ imagem_borrada }</span><em>Altas frequências têm energia reduzida — o borramento as eliminou.</em>',
+  },
+  {
+    info: `<strong>Passo 2 — H(u,v): Resposta em Frequência do Filtro</strong><br>
+           O filtro de média é um <em>passa-baixas</em>: ele preserva baixas frequências (H ≈ 1) e
+           <strong>zerifica</strong> as altas frequências (H ≈ 0). Isso é o problema central da filtragem inversa.`,
+    showG:true, showH:true, showNH:false, showF:false,
+    calc:'<b>Filtro de Média (passa-baixas):</b><br><span class="formula">H(u,v) = valores próximos de 0 nas altas frequências!</span><em>Quando H ≈ 0, dividir por H vai amplificar qualquer ruído gigantescamente.</em>',
+  },
+  {
+    info: `<strong>Passo 3 — N(u,v)/H(u,v): O Ruído Amplificado</strong><br>
+           A matemática da restauração resulta em: <code>F̂ = G/H = F + N/H</code><br>
+           Veja o que acontece com o termo <code>N/H</code> nas altas frequências:
+           <br>H ≈ 0.01 → N/H = 5/0.01 = <strong>500!</strong> O ruído explode.`,
+    showG:true, showH:true, showNH:true, showF:false,
+    calc:'<b>Amplificação do ruído:</b><br><span class="formula">N/H → <span class="warn">∞</span> quando H → 0</span><em>Nas altas frequências: N=5, H=0.01 → N/H = 500 (barra sai do gráfico!)</em>',
+  },
+  {
+    info: `<strong>Passo 4 — F̂(u,v): Imagem "Recuperada"</strong><br>
+           A imagem reconstruída <code>F̂ = G/H = F_original + N/H</code> deveria ser parecida com o original.
+           Mas nas altas frequências, o ruído amplificado (<code>N/H</code>) domina completamente.<br>
+           <strong>Resultado: a imagem recuperada tem artefatos visuais terríveis (padrões repetitivos, ruído extremo).</strong>`,
+    showG:true, showH:true, showNH:true, showF:true,
+    calc:'<b>Resultado da Filtragem Inversa:</b><br><span class="formula">F̂ = G / H</span><em>Nas baixas frequências: funciona bem. Nas altas: o ruído dominou completamente.</em><br><br><span class="warn">⚠️ Conclusão: O Filtro Inverso é INÚTIL na presença de qualquer ruído!</span><br><em>→ Solução: Filtro de Wiener (balancea restauração vs. amplificação de ruído)</em>',
+  },
+];
+
+let invStep = 0, invPlaying = false, invTimer = null;
+
+function renderFreqChart(id, vals, color, maxOverride) {
+  const c = document.getElementById(id);
+  c.innerHTML = '';
+  const mx = maxOverride || Math.max(...vals.filter(v=>v<900)) || 1;
+  vals.forEach((v, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'bar-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    const h = v >= 900 ? 114 : Math.round((v / mx) * 100);
+    bar.style.cssText = `height:${h}px;background:${v>=900?'#e11d48':color};`;
+    const lbl = document.createElement('div');
+    lbl.className = 'bar-label';
+    lbl.textContent = v >= 900 ? '∞' : v;
+    wrap.appendChild(bar);
+    wrap.appendChild(lbl);
+    c.appendChild(wrap);
+  });
+}
+
+function invRender() {
+  const s = invSteps[invStep];
+  document.getElementById('invStepNum').textContent = invStep;
+  document.getElementById('invStepTotal').textContent = invSteps.length - 1;
+  document.getElementById('invInfo').innerHTML = s.info;
+  document.getElementById('invCalcBox').innerHTML = s.calc;
+
+  if (s.showG)  renderFreqChart('freqG',  G_VALS,  '#6c63ff', 110);
+  else          document.getElementById('freqG').innerHTML  = '<em style="font-size:0.75rem;color:#aaa;align-self:center">aguardando…</em>';
+
+  if (s.showH)  renderFreqChart('freqH',  H_VALS.map(v=>Math.round(v*100)), '#3949ab', 110);
+  else          document.getElementById('freqH').innerHTML  = '<em style="font-size:0.75rem;color:#aaa;align-self:center">aguardando…</em>';
+
+  if (s.showNH) renderFreqChart('freqNH', NH_VALS, '#e11d48', 110);
+  else          document.getElementById('freqNH').innerHTML = '<em style="font-size:0.75rem;color:#aaa;align-self:center">aguardando…</em>';
+
+  if (s.showF)  renderFreqChart('freqF',  F_EST,   '#10b981', 110);
+  else          document.getElementById('freqF').innerHTML  = '<em style="font-size:0.75rem;color:#aaa;align-self:center">aguardando…</em>';
+}
+
+function invNext()  { if(invStep<invSteps.length-1){invStep++;invRender();}else invStopPlay(); }
+function invPrev()  { if(invStep>0){invStep--;invRender();} }
+function invReset() { invStep=0;invStopPlay();invRender(); }
+function invTogglePlay() {
+  if(invPlaying){invStopPlay();}
+  else{invPlaying=true;document.getElementById('invPlayBtn').textContent='⏸ Pausar';
+    invTimer=setInterval(()=>{if(invStep<invSteps.length-1){invStep++;invRender();}else invStopPlay();},2500);}
+}
+function invStopPlay() { invPlaying=false;clearInterval(invTimer);document.getElementById('invPlayBtn').textContent='▶ Auto'; }
+
+/* ══════════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════════ */
+document.getElementById('noiseStepTotal').textContent = noiseSteps.length - 1;
+document.getElementById('mediaStepTotal').textContent = mediaSteps.length - 1;
+document.getElementById('medStepTotal').textContent   = medSteps.length - 1;
+document.getElementById('invStepTotal').textContent   = invSteps.length - 1;
+
+noiseRender();
+mediaRender();
+medRender();
+invRender();
+</script>
+</body>
+</html>
